@@ -190,7 +190,6 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
     <a href="https://wa.me/201228164202" target="_blank"><i class="fab fa-whatsapp"></i> تواصل معنا</a>
   </nav>
   <div class="header-actions">
-    <a class="admin-link" onclick="openAdminLogin()"><i class="fas fa-lock"></i> Admin</a>
     <button class="cart-btn" onclick="openCart()">
       <span class="cart-count" id="cartCount">0</span>
       <i class="fas fa-shopping-bag"></i> السلة
@@ -244,7 +243,6 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
   <div class="footer-links">
     <a onclick="scrollToProducts()">المنتجات</a>
     <a href="https://wa.me/201228164202" target="_blank">تواصل معنا</a>
-    <a onclick="openAdminLogin()">لوحة الإدارة</a>
   </div>
   <p style="margin-top:2rem;font-size:0.75rem;opacity:0.4;">© 2025 TEFA Supplements. جميع الحقوق محفوظة.</p>
 </footer>
@@ -342,17 +340,7 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
   </div>
 </div>
 
-<!-- ADMIN LOGIN -->
-<div class="modal-overlay" id="adminLoginModal">
-  <div class="small-modal">
-    <div class="checkout-header"><h3>🔐 لوحة الإدارة</h3><button onclick="closeAdminLogin()" style="background:none;border:none;color:var(--gray);font-size:1.2rem;cursor:pointer;"><i class="fas fa-times"></i></button></div>
-    <div class="checkout-body">
-      <div class="form-group"><label>كلمة السر</label><input type="password" id="adminPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkAdmin()"></div>
-      <p id="adminErr" style="color:var(--red);font-size:0.85rem;margin-bottom:1rem;display:none;">كلمة سر غلط، حاول تاني</p>
-      <button class="submit-order-btn" onclick="checkAdmin()">دخول</button>
-    </div>
-  </div>
-</div>
+<!-- admin access removed -->
 
 <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
 
@@ -360,7 +348,7 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
 const SB_URL='https://ublurrzfsxikexfhqbns.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVibHVycnpmc3hpa2V4ZmhxYm5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDEyODEsImV4cCI6MjA5MzExNzI4MX0.SPlW6T2iBg8tTkFbp1FXDKHaoZrkDlnUAxlUPNhIiFQ';
 const WHATSAPP='201228164202';
-const ADMIN_PASS='tefa2025';
+
 
 async function sb(path,opts={}){
   const r=await fetch(`${SB_URL}/rest/v1/${path}`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},method:opts.method||'GET',body:opts.body});
@@ -508,10 +496,6 @@ async function submitOrder(){
   finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> إرسال الطلب';}
 }
 function closeSuccess(){document.getElementById('successModal').classList.remove('open');document.body.style.overflow='';}
-
-function openAdminLogin(){document.getElementById('adminLoginModal').classList.add('open');document.body.style.overflow='hidden';}
-function closeAdminLogin(){document.getElementById('adminLoginModal').classList.remove('open');document.body.style.overflow='';}
-function checkAdmin(){if(document.getElementById('adminPwd').value===ADMIN_PASS){closeAdminLogin();window.open('admin.html','_blank');}else{document.getElementById('adminErr').style.display='block';document.getElementById('adminPwd').value='';}}
 
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
