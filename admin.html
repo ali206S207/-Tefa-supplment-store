@@ -94,7 +94,7 @@
 /* IMAGE UPLOAD */
 .img-upload-area{border:2px dashed var(--border);border-radius:10px;padding:0;text-align:center;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;min-height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;background:var(--dark2);}
 .img-upload-area:hover{border-color:var(--gold);background:rgba(201,168,76,0.05);}
-.img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.img-upload-area input[type=file]{display:none;}
 .img-upload-area i{font-size:2.5rem;color:var(--gray);margin-bottom:0.75rem;}
 .img-upload-area p{color:var(--gray);font-size:0.85rem;}
 .img-upload-area small{color:rgba(136,136,136,0.6);font-size:0.75rem;margin-top:0.25rem;}
@@ -206,7 +206,7 @@
         <div class="form-section">
           <div class="form-group">
             <label>صورة المنتج</label>
-            <div class="img-upload-area" id="addImgArea">
+            <div class="img-upload-area" id="addImgArea" onclick="document.getElementById('addImgInput').click()">
               <input type="file" accept="image/*" id="addImgInput" onchange="previewAddImg(this)">
               <i class="fas fa-cloud-upload-alt"></i>
               <p>اسحب الصورة هنا أو اضغط للاختيار</p>
@@ -248,7 +248,7 @@
       <input type="hidden" id="editProductId">
       <div class="form-group">
         <label>صورة المنتج</label>
-        <div class="img-upload-area" id="editImgArea">
+        <div class="img-upload-area" id="editImgArea" onclick="document.getElementById('editImgInput').click()">
           <input type="file" accept="image/*" id="editImgInput" onchange="previewEditImg(this)">
           <i class="fas fa-cloud-upload-alt"></i>
           <p>اسحب الصورة هنا أو اضغط للاختيار</p>
