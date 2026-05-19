@@ -338,15 +338,17 @@ function showPage(id,navEl){
 
 // ===== DASHBOARD =====
 function renderDashboard(){
-  const total=orders.reduce((s,o)=>s+o.total,0),newCount=orders.filter(o=>o.status==='جديد').length;
+  const revenue=orders.filter(o=>o.status==='مكتمل').reduce((s,o)=>s+o.total,0);
+  const newCount=orders.filter(o=>o.status==='جديد').length;
+  const confirmedCount=orders.filter(o=>o.status==='مؤكد').length;
   document.getElementById('statsRow').innerHTML=`
     <div class="stat-card"><div class="stat-icon"><i class="fas fa-receipt"></i></div><h3>${orders.length}</h3><p>إجمالي الطلبات</p></div>
     <div class="stat-card"><div class="stat-icon"><i class="fas fa-fire"></i></div><h3>${newCount}</h3><p>طلبات جديدة</p></div>
-    <div class="stat-card"><div class="stat-icon"><i class="fas fa-coins"></i></div><h3>${total.toLocaleString()}</h3><p>إيرادات (جنيه)</p></div>
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-coins"></i></div><h3>${revenue.toLocaleString()}</h3><p>إيرادات مكتملة (جنيه)</p></div>
     <div class="stat-card"><div class="stat-icon"><i class="fas fa-box"></i></div><h3>${products.length}</h3><p>منتج في المتجر</p></div>`;
   const recent=orders.slice(0,3);
   document.getElementById('recentOrders').innerHTML=recent.length?recent.map(o=>orderCardHTML(o)).join(''):`<div class="empty-state"><i class="fas fa-receipt"></i><p>لا يوجد طلبات بعد</p></div>`;
-  document.getElementById('newOrdersBadge').textContent=newCount;
+  document.getElementById('newOrdersBadge').textContent=newCount+confirmedCount;
 }
 
 // ===== ORDERS =====
@@ -363,14 +365,33 @@ function renderOrders(){
 }
 
 function orderCardHTML(o){
-  const sc={جديد:'status-new',مؤكد:'status-confirmed',مكتمل:'status-done'}[o.status]||'status-new';
   const items=Array.isArray(o.items)?o.items:JSON.parse(o.items||'[]');
   const phone=o.customer_phone||'';
   const waPhone=phone.startsWith('0')?'2'+phone:phone;
-  return `<div class="order-card">
+  const statuses=[
+    {key:'جديد',   cls:'status-new',       icon:'fa-circle',      color:'#ff8080'},
+    {key:'مؤكد',   cls:'status-confirmed',  icon:'fa-check-circle',color:'var(--gold)'},
+    {key:'مكتمل',  cls:'status-done',       icon:'fa-check-double',color:'#56d364'},
+  ];
+  const statusBtns=statuses.map(s=>`
+    <button onclick="setStatus('${o.id}','${s.key}')"
+      style="padding:0.3rem 0.85rem;border-radius:100px;font-size:0.75rem;font-weight:700;cursor:pointer;border:1.5px solid;font-family:'Cairo',sans-serif;transition:all 0.2s;
+        ${o.status===s.key
+          ? `background:${s.color};color:var(--black);border-color:${s.color};`
+          : `background:transparent;color:${s.color};border-color:${s.color};opacity:0.45;`}">
+      <i class="fas ${s.icon}" style="margin-left:4px;font-size:0.7rem;"></i>${s.key}
+    </button>`).join('');
+
+  const senderInfo = o.sender_account
+    ? `<div class="order-field" style="margin-bottom:0.75rem;">
+        <label>حساب المُحوِّل</label>
+        <span style="color:var(--gold);font-weight:700;">${o.sender_account}</span>
+       </div>` : '';
+
+  return `<div class="order-card" id="oc-${o.id}">
     <div class="order-header">
       <div><div class="order-id">${o.id}</div><div class="order-date">${o.date||''}</div></div>
-      <button class="order-status ${sc}" onclick="cycleStatus('${o.id}')">${o.status}</button>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">${statusBtns}</div>
     </div>
     <div class="order-customer">
       <div class="order-field"><label>الاسم</label><span>${o.customer_name}</span></div>
@@ -378,6 +399,7 @@ function orderCardHTML(o){
       <div class="order-field"><label>العنوان</label><span>${o.customer_address}</span></div>
     </div>
     ${o.customer_notes?`<div class="order-field" style="margin-bottom:0.75rem;"><label>ملاحظات</label><span style="font-size:0.85rem;">${o.customer_notes}</span></div>`:''}
+    ${senderInfo}
     <div class="order-items-list">📦 ${items.map(i=>`${i.name} × ${i.qty}`).join(' | ')}</div>
     <div class="order-footer">
       <div><div class="order-total">${(o.total||0).toLocaleString()} جنيه</div><span class="order-payment"><i class="fas fa-credit-card"></i> ${o.payment_label}</span></div>
@@ -392,12 +414,17 @@ function orderCardHTML(o){
   </div>`;
 }
 
-async function cycleStatus(id){
-  const o=orders.find(x=>x.id===id);if(!o)return;
-  const cycle={جديد:'مؤكد',مؤكد:'مكتمل',مكتمل:'جديد'};
-  o.status=cycle[o.status]||'جديد';
-  try{await sb(`orders?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({status:o.status})});renderOrders();renderDashboard();toast(`تم التغيير إلى: ${o.status}`);}
-  catch(e){toast('خطأ في التحديث');}
+async function setStatus(id, newStatus){
+  const o=orders.find(x=>x.id===id);if(!o||o.status===newStatus)return;
+  o.status=newStatus;
+  try{
+    await sb(`orders?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({status:newStatus})});
+    // Re-render just this card for speed
+    const card=document.getElementById('oc-'+id);
+    if(card) card.outerHTML=orderCardHTML(o);
+    renderDashboard();
+    toast(`✅ تم التغيير إلى: ${newStatus}`);
+  }catch(e){toast('خطأ في التحديث');}
 }
 
 async function deleteOrder(id){
