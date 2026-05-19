@@ -52,9 +52,9 @@ nav a:hover{color:var(--gold);}
 .product-card:hover{transform:translateY(-8px);border-color:rgba(201,168,76,0.5);box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 30px rgba(201,168,76,0.1);}
 .product-card.out-of-stock{opacity:0.6;pointer-events:none;}
 .product-card.out-of-stock::after{content:'نفذ المخزون';position:absolute;top:1rem;right:1rem;background:var(--red);color:#fff;font-size:0.75rem;font-weight:700;padding:0.3rem 0.8rem;border-radius:3px;}
-.product-img{width:100%;height:220px;background:linear-gradient(135deg,var(--dark2),#1c1c1c);display:flex;align-items:center;justify-content:center;font-size:4rem;position:relative;overflow:hidden;}
+.product-img{width:100%;height:220px;background:linear-gradient(135deg,#0d0d0d,#161616);display:flex;align-items:center;justify-content:center;font-size:4rem;position:relative;overflow:hidden;}
 .product-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,var(--dark) 0%,transparent 50%);}
-.product-img img{width:100%;height:100%;object-fit:cover;}
+.product-img img{width:100%;height:100%;object-fit:contain;padding:0.75rem;}
 .product-badge{position:absolute;top:1rem;right:1rem;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);font-size:0.7rem;font-weight:900;padding:0.25rem 0.75rem;border-radius:3px;letter-spacing:1px;z-index:2;}
 .product-info{padding:1.25rem;}
 .product-cat{font-size:0.7rem;color:var(--gold);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:0.4rem;}
@@ -108,7 +108,7 @@ nav a:hover{color:var(--gold);}
 .product-modal{background:var(--dark);border:1px solid var(--border);border-radius:16px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;transform:scale(0.9) translateY(20px);transition:transform 0.4s cubic-bezier(0.23,1,0.32,1);position:relative;}
 .modal-overlay.open .product-modal,.modal-overlay.open .checkout-modal,.modal-overlay.open .small-modal{transform:scale(1) translateY(0);}
 .modal-img{width:100%;height:280px;background:linear-gradient(135deg,var(--dark2),#1c1c1c);display:flex;align-items:center;justify-content:center;font-size:6rem;border-radius:16px 16px 0 0;overflow:hidden;}
-.modal-img img{width:100%;height:100%;object-fit:cover;}
+.modal-img img{width:100%;height:100%;object-fit:contain;padding:1rem;}
 .modal-body{padding:2rem;}
 .modal-cat{font-size:0.7rem;color:var(--gold);font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:0.5rem;}
 .modal-name{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;margin-bottom:0.5rem;}
@@ -319,6 +319,18 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
         <img id="screenshotPreview" class="screenshot-preview" alt="receipt">
       </div>
       <div class="form-group" style="margin-top:1.25rem;"><label>ملاحظات إضافية (اختياري)</label><textarea id="cNotes" placeholder="أي تفاصيل إضافية..."></textarea></div>
+      <div class="form-group">
+        <label>كوبون الخصم (اختياري)</label>
+        <div style="display:flex;gap:0.5rem;">
+          <input type="text" id="couponInput" placeholder="ادخل الكود هنا..." style="flex:1;text-transform:uppercase;">
+          <button type="button" onclick="applyCoupon()" style="background:var(--gold-dim);border:1px solid var(--border);color:var(--gold);padding:0 1.25rem;border-radius:8px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700;font-size:0.9rem;white-space:nowrap;transition:all 0.3s;">تطبيق</button>
+        </div>
+        <p id="couponMsg" style="font-size:0.8rem;margin-top:0.4rem;display:none;"></p>
+      </div>
+      <div id="discountLine" style="display:none;background:rgba(46,160,67,0.08);border:1px solid rgba(46,160,67,0.25);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;display:none;flex-direction:row;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.85rem;color:#56d364;"><i class="fas fa-tag"></i> خصم مطبق</span>
+        <span id="discountAmount" style="font-weight:700;color:#56d364;"></span>
+      </div>
       <button class="submit-order-btn" id="submitBtn" onclick="submitOrder()"><i class="fas fa-paper-plane"></i> إرسال الطلب</button>
     </div>
   </div>
@@ -476,26 +488,63 @@ async function submitOrder(){
   const senderAccount=selectedPayment!=='cash'?(document.getElementById('senderAccount').value.trim()):'';
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
   const orderId='TEFA-'+Date.now().toString().slice(-6);
-  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const rawTotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const total=Math.max(0,rawTotal-discountValue);
   const labels={cash:'كاش في الجيم',vodafone:'فودافون كاش',instapay:'انستا باي'};
-  const orderData={id:orderId,date:new Date().toLocaleString('ar-EG'),customer_name:name,customer_phone:phone,customer_address:address,customer_notes:notes,items:cart,total,payment_method:selectedPayment,payment_label:labels[selectedPayment],screenshot_url:screenshot,sender_account:senderAccount,status:'جديد'};
+  const orderData={id:orderId,date:new Date().toLocaleString('ar-EG'),customer_name:name,customer_phone:phone,customer_address:address,customer_notes:notes,items:cart,total,payment_method:selectedPayment,payment_label:labels[selectedPayment],screenshot_url:screenshot,sender_account:senderAccount,coupon:appliedCoupon||'',discount:discountValue,status:'جديد'};
   try{
     await sb('orders',{method:'POST',body:JSON.stringify(orderData)});
     cart=[];localStorage.setItem('tefa_cart','[]');updateCartUI();screenshot='';
     document.getElementById('screenshotInput').value='';document.getElementById('screenshotPreview').style.display='none';
     if(document.getElementById('senderAccount'))document.getElementById('senderAccount').value='';
+    resetCoupon();
     closeCheckout();
     const notes2={cash:'روح الجيم وادفع الكاش عند الاستلام. هيتواصل معاك الأدمن لتأكيد الموعد.',vodafone:'تم استلام بيانات التحويل. هيتم مراجعة التحويل والتواصل معاك.',instapay:'تم استلام بيانات التحويل. هيتم مراجعة التحويل والتواصل معاك.'};
     document.getElementById('successOrderId').textContent=orderId;
     document.getElementById('successPaymentNote').textContent=notes2[selectedPayment];
     const waExtra=senderAccount?`\nحساب التحويل: ${senderAccount}`:'';
-    const wa=encodeURIComponent(`طلب جديد من TEFA Supplements 🛒\nرقم الطلب: ${orderId}\nالاسم: ${name}\nالهاتف: ${phone}\nالعنوان: ${address}\nالمنتجات: ${orderData.items.map(i=>i.name+'×'+i.qty).join(', ')}\nالإجمالي: ${total} جنيه\nطريقة الدفع: ${labels[selectedPayment]}${waExtra}`);
-    document.getElementById('whatsappConfirm').href=`https://wa.me/${WHATSAPP}?text=${wa}`;
+    const waMsg=`🛒 *طلب جديد — TEFA Supplements*\n\n*رقم الطلب:* ${orderId}\n*الاسم:* ${name}\n*الهاتف:* ${phone}\n*العنوان:* ${address}\n*المنتجات:*\n${orderData.items.map(i=>`  • ${i.name} × ${i.qty} = ${(i.price*i.qty).toLocaleString()} ج`).join('\n')}\n*الإجمالي:* ${total.toLocaleString()} جنيه\n*الدفع:* ${labels[selectedPayment]}${waExtra}`;
+    const wa=encodeURIComponent(waMsg);
+    const waUrl=`https://wa.me/${WHATSAPP}?text=${wa}`;
+    // Auto-open WhatsApp to notify admin
+    window.open(waUrl,'_blank');
+    document.getElementById('whatsappConfirm').href=waUrl;
     document.getElementById('successModal').classList.add('open');document.body.style.overflow='hidden';
   }catch(e){showToast('❌ حصل خطأ، حاول تاني');}
   finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> إرسال الطلب';}
 }
 function closeSuccess(){document.getElementById('successModal').classList.remove('open');document.body.style.overflow='';}
+
+// ===== COUPONS =====
+const COUPONS = {
+  'TEFA10':  {type:'percent', value:10,  label:'خصم 10%'},
+  'TEFA20':  {type:'percent', value:20,  label:'خصم 20%'},
+  'GYM50':   {type:'fixed',   value:50,  label:'خصم 50 جنيه'},
+  'VIP100':  {type:'fixed',   value:100, label:'خصم 100 جنيه'},
+};
+let appliedCoupon=null, discountValue=0;
+
+function applyCoupon(){
+  const code=document.getElementById('couponInput').value.trim().toUpperCase();
+  const msg=document.getElementById('couponMsg');
+  const line=document.getElementById('discountLine');
+  msg.style.display='block';
+  if(!code){msg.textContent='ادخل الكود الأول';msg.style.color='var(--red)';return;}
+  const coupon=COUPONS[code];
+  if(!coupon){msg.textContent='❌ الكود غلط أو منتهي';msg.style.color='var(--red)';appliedCoupon=null;discountValue=0;line.style.display='none';return;}
+  const rawTotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  discountValue=coupon.type==='percent'?Math.round(rawTotal*coupon.value/100):Math.min(coupon.value,rawTotal);
+  appliedCoupon=code;
+  msg.textContent=`✅ ${coupon.label} — وفرت ${discountValue.toLocaleString()} جنيه!`;
+  msg.style.color='#56d364';
+  document.getElementById('discountAmount').textContent=`- ${discountValue.toLocaleString()} جنيه`;
+  line.style.display='flex';
+  // Update summary total display
+  const finalTotal=rawTotal-discountValue;
+  document.getElementById('checkoutSummaryTotal').textContent=finalTotal.toLocaleString()+' جنيه';
+}
+
+function resetCoupon(){appliedCoupon=null;discountValue=0;const l=document.getElementById('discountLine');if(l)l.style.display='none';const m=document.getElementById('couponMsg');if(m)m.style.display='none';const i=document.getElementById('couponInput');if(i)i.value='';}
 
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
