@@ -142,6 +142,7 @@
     <div class="nav-item" onclick="showPage('orders',this)"><i class="fas fa-receipt"></i> الطلبات<span class="nav-badge" id="newOrdersBadge">0</span></div>
     <div class="nav-item" onclick="showPage('products',this)"><i class="fas fa-box"></i> المنتجات</div>
     <div class="nav-item" onclick="showPage('addProduct',this)"><i class="fas fa-plus-circle"></i> إضافة منتج</div>
+    <div class="nav-item" onclick="showPage('offers',this)"><i class="fas fa-tags"></i> العروض</div>
   </nav>
   <div class="sidebar-footer">
     <a class="back-btn" href="index.html"><i class="fas fa-arrow-right"></i> العودة للمتجر</a>
@@ -232,6 +233,84 @@
           <div class="form-group"><label>كمية المخزون (-1 = غير محدود)</label><input type="number" id="apStockQty" value="-1" min="-1"></div>
           <button class="primary-btn" id="addProductBtn" onclick="addProduct()"><i class="fas fa-plus"></i> إضافة المنتج</button>
         </div>
+      </div>
+    </div>
+
+    <!-- OFFERS PAGE -->
+    <div class="page" id="page-offers">
+      <!-- SINGLE OFFERS -->
+      <div class="section-card" style="margin-bottom:1.5rem;">
+        <div class="section-card-header">
+          <h2>⚡ عروض المنتجات الفردية</h2>
+          <button class="primary-btn" style="padding:0.5rem 1.25rem;font-size:0.85rem;" onclick="toggleForm('singleOfferForm')"><i class="fas fa-plus"></i> عرض جديد</button>
+        </div>
+        <!-- ADD SINGLE OFFER FORM -->
+        <div id="singleOfferForm" style="display:none;padding:1.5rem;border-bottom:1px solid var(--border);">
+          <div class="form-row">
+            <div class="form-group">
+              <label>المنتج</label>
+              <select id="offerProductId" style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.75rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;outline:none;direction:rtl;"></select>
+            </div>
+            <div class="form-group">
+              <label>سعر العرض (جنيه)</label>
+              <input type="number" id="offerSalePrice" placeholder="950">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>تسمية العرض</label>
+              <input type="text" id="offerLabel" placeholder="عرض خاص / تخفيض موسمي">
+            </div>
+            <div class="form-group">
+              <label>تاريخ الانتهاء (اختياري)</label>
+              <input type="datetime-local" id="offerExpiry">
+            </div>
+          </div>
+          <button class="primary-btn" onclick="addSingleOffer()"><i class="fas fa-bolt"></i> إضافة العرض</button>
+        </div>
+        <div id="singleOffersContainer" style="padding:1rem;"></div>
+      </div>
+
+      <!-- BUNDLES -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>🎁 عروض الحزم</h2>
+          <button class="primary-btn" style="padding:0.5rem 1.25rem;font-size:0.85rem;" onclick="toggleForm('bundleForm')"><i class="fas fa-plus"></i> حزمة جديدة</button>
+        </div>
+        <!-- ADD BUNDLE FORM -->
+        <div id="bundleForm" style="display:none;padding:1.5rem;border-bottom:1px solid var(--border);">
+          <div class="form-row">
+            <div class="form-group">
+              <label>اسم الحزمة</label>
+              <input type="text" id="bundleName" placeholder="مثال: Starter Pack">
+            </div>
+            <div class="form-group">
+              <label>سعر الحزمة (جنيه)</label>
+              <input type="number" id="bundlePrice" placeholder="1400">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>وصف الحزمة (اختياري)</label>
+            <input type="text" id="bundleDesc" placeholder="أفضل مجموعة للمبتدئين">
+          </div>
+          <div class="form-group">
+            <label>اختار المنتجات</label>
+            <div id="bundleProductsSelect" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;max-height:220px;overflow-y:auto;padding:0.75rem;background:var(--dark2);border:1px solid var(--border);border-radius:8px;"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>تسمية الحزمة</label>
+              <input type="text" id="bundleLabel" placeholder="عرض الحزمة">
+            </div>
+            <div class="form-group">
+              <label>تاريخ الانتهاء (اختياري)</label>
+              <input type="datetime-local" id="bundleExpiry">
+            </div>
+          </div>
+          <div id="bundleSavingPreview" style="display:none;background:rgba(46,160,67,0.1);border:1px solid rgba(46,160,67,0.3);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.9rem;color:#56d364;font-weight:700;"></div>
+          <button class="primary-btn" onclick="addBundle()"><i class="fas fa-gift"></i> إضافة الحزمة</button>
+        </div>
+        <div id="bundlesContainer" style="padding:1rem;"></div>
       </div>
     </div>
 
@@ -392,11 +471,12 @@ function showPage(id,navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(navEl)navEl.classList.add('active');
-  const titles={dashboard:'الرئيسية',orders:'الطلبات',products:'المنتجات',addProduct:'إضافة منتج'};
+  const titles={dashboard:'الرئيسية',orders:'الطلبات',products:'المنتجات',addProduct:'إضافة منتج',offers:'العروض والحزم'};
   document.getElementById('pageTitle').textContent=titles[id]||id;
   if(id==='orders')renderOrders();
   if(id==='products'){loadAndRenderProducts();}
   if(id==='dashboard')renderDashboard();
+  if(id==='offers')renderOffersPage();
 }
 
 // ===== DASHBOARD =====
@@ -746,6 +826,208 @@ function closeOrderDetails(){document.getElementById('orderDetailsModal').classL
 function toast(msg){const t=document.getElementById('adminToast');document.getElementById('adminToastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
 
 // ===== INIT =====
+// ===== OFFERS =====
+let offersData=[], bundlesData=[];
+
+function toggleForm(id){
+  const el=document.getElementById(id);
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(id==='bundleForm' && el.style.display==='block') populateBundleSelect();
+}
+
+function isExpired(expires_at){ return expires_at && new Date(expires_at) < new Date(); }
+
+async function loadOffers(){
+  try{
+    [offersData, bundlesData] = await Promise.all([
+      sb('offers?order=created_at.desc&select=*'),
+      sb('bundles?order=created_at.desc&select=*')
+    ]);
+  }catch(e){toast('خطأ في تحميل العروض');}
+}
+
+function renderOffersPage(){
+  loadOffers().then(()=>{
+    populateOfferProductSelect();
+    renderSingleOffers();
+    renderBundles();
+  });
+}
+
+function populateOfferProductSelect(){
+  const sel=document.getElementById('offerProductId');
+  if(!sel) return;
+  sel.innerHTML=products.map(p=>`<option value="${p.id}">${p.name} — ${p.price.toLocaleString()} ج</option>`).join('');
+}
+
+function populateBundleSelect(){
+  const container=document.getElementById('bundleProductsSelect');
+  if(!container) return;
+  container.innerHTML=products.map(p=>`
+    <label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:var(--dark);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all 0.2s;" 
+      onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+      <input type="checkbox" value="${p.id}" data-price="${p.price}" data-name="${p.name}" 
+        style="accent-color:var(--gold);" onchange="updateBundlePreview()">
+      <span style="font-size:0.85rem;">${p.emoji||'📦'} ${p.name}</span>
+      <span style="margin-right:auto;font-size:0.8rem;color:var(--gold);font-weight:700;">${p.price.toLocaleString()} ج</span>
+    </label>`).join('');
+}
+
+function updateBundlePreview(){
+  const checked=[...document.querySelectorAll('#bundleProductsSelect input:checked')];
+  const originalTotal=checked.reduce((s,c)=>s+parseInt(c.dataset.price),0);
+  const bundlePrice=+document.getElementById('bundlePrice').value||0;
+  const preview=document.getElementById('bundleSavingPreview');
+  if(checked.length>=2 && bundlePrice>0){
+    const saving=originalTotal-bundlePrice;
+    preview.style.display='block';
+    preview.innerHTML=`السعر الأصلي: ${originalTotal.toLocaleString()} ج &nbsp;|&nbsp; سعر الحزمة: ${bundlePrice.toLocaleString()} ج &nbsp;|&nbsp; 💰 توفير: ${saving.toLocaleString()} ج (${Math.round(saving/originalTotal*100)}%)`;
+  } else { preview.style.display='none'; }
+}
+
+// single offer card
+function singleOfferCardHTML(o){
+  const p=products.find(x=>x.id===o.product_id);
+  if(!p) return '';
+  const expired=isExpired(o.expires_at);
+  const saving=p.price-o.sale_price;
+  const pct=Math.round(saving/p.price*100);
+  return `<div style="background:var(--dark2);border:1px solid ${o.active&&!expired?'var(--border)':'rgba(224,53,53,0.3)'};border-radius:10px;padding:1.25rem;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <div style="width:48px;height:48px;background:var(--dark);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border:1px solid var(--border);overflow:hidden;">
+        ${p.img?`<img src="${p.img}" style="width:100%;height:100%;object-fit:contain;">`:`${p.emoji||'📦'}`}
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;">${p.name}</div>
+        <div style="font-size:0.8rem;color:var(--gray);margin-top:0.2rem;">${o.label}</div>
+        <div style="font-size:0.8rem;margin-top:0.2rem;">
+          <span style="text-decoration:line-through;color:var(--gray);">${p.price.toLocaleString()} ج</span>
+          <span style="color:var(--gold);font-weight:700;margin-right:0.5rem;">${o.sale_price.toLocaleString()} ج</span>
+          <span style="background:rgba(224,53,53,0.2);color:#ff8080;padding:0.1rem 0.4rem;border-radius:3px;font-size:0.75rem;">وفر ${pct}%</span>
+        </div>
+        ${o.expires_at?`<div style="font-size:0.75rem;color:${expired?'var(--red)':'var(--gray)'};">ينتهي: ${new Date(o.expires_at).toLocaleString('ar-EG')}</div>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <div class="toggle-switch ${o.active&&!expired?'on':''}" onclick="toggleOffer(${o.id},${!o.active})" title="${o.active?'تعطيل':'تفعيل'}"></div>
+      <button class="action-btn danger" onclick="deleteOffer(${o.id})"><i class="fas fa-trash"></i></button>
+    </div>
+  </div>`;
+}
+
+function renderSingleOffers(){
+  const c=document.getElementById('singleOffersContainer');
+  if(!c) return;
+  c.innerHTML=offersData.length
+    ? offersData.map(singleOfferCardHTML).join('')
+    : `<div class="empty-state"><i class="fas fa-tags"></i><p>مفيش عروض فردية دلوقتي</p></div>`;
+}
+
+// bundle card
+function bundleCardHTML(b){
+  const pIds=Array.isArray(b.product_ids)?b.product_ids:JSON.parse(b.product_ids||'[]');
+  const bundleProducts=pIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
+  const expired=isExpired(b.expires_at);
+  const saving=b.original_price-b.bundle_price;
+  const pct=Math.round(saving/b.original_price*100);
+  return `<div style="background:var(--dark2);border:1px solid ${b.active&&!expired?'rgba(201,168,76,0.3)':'rgba(224,53,53,0.3)'};border-radius:10px;padding:1.25rem;margin-bottom:0.75rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--gold);">🎁 ${b.name}</div>
+        ${b.description?`<div style="font-size:0.8rem;color:var(--gray);">${b.description}</div>`:''}
+        <div style="font-size:0.8rem;margin-top:0.35rem;">
+          <span style="text-decoration:line-through;color:var(--gray);">${b.original_price.toLocaleString()} ج</span>
+          <span style="color:var(--gold);font-weight:700;margin-right:0.5rem;">${b.bundle_price.toLocaleString()} ج</span>
+          <span style="background:rgba(46,160,67,0.2);color:#56d364;padding:0.1rem 0.4rem;border-radius:3px;font-size:0.75rem;">توفير ${pct}%</span>
+        </div>
+        ${b.expires_at?`<div style="font-size:0.75rem;color:${expired?'var(--red)':'var(--gray)'};">ينتهي: ${new Date(b.expires_at).toLocaleString('ar-EG')}</div>`:''}
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <div class="toggle-switch ${b.active&&!expired?'on':''}" onclick="toggleBundle(${b.id},${!b.active})"></div>
+        <button class="action-btn danger" onclick="deleteBundle(${b.id})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      ${bundleProducts.map(p=>`<div style="display:flex;align-items:center;gap:0.4rem;background:var(--dark);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;font-size:0.8rem;">
+        <span>${p.emoji||'📦'}</span><span>${p.name}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderBundles(){
+  const c=document.getElementById('bundlesContainer');
+  if(!c) return;
+  c.innerHTML=bundlesData.length
+    ? bundlesData.map(bundleCardHTML).join('')
+    : `<div class="empty-state"><i class="fas fa-gift"></i><p>مفيش حزم دلوقتي</p></div>`;
+}
+
+async function addSingleOffer(){
+  const productId=+document.getElementById('offerProductId').value;
+  const salePrice=+document.getElementById('offerSalePrice').value;
+  const label=document.getElementById('offerLabel').value.trim()||'عرض خاص';
+  const expiry=document.getElementById('offerExpiry').value||null;
+  const p=products.find(x=>x.id===productId);
+  if(!salePrice||salePrice<=0){toast('⚠️ ادخل سعر العرض');return;}
+  if(p && salePrice>=p.price){toast('⚠️ سعر العرض لازم يكون أقل من السعر الأصلي');return;}
+  try{
+    const res=await sb('offers',{method:'POST',body:JSON.stringify({product_id:productId,sale_price:salePrice,label,expires_at:expiry,active:true})});
+    if(res&&res[0])offersData.unshift(res[0]);
+    renderSingleOffers();
+    document.getElementById('offerSalePrice').value='';
+    document.getElementById('offerLabel').value='';
+    document.getElementById('offerExpiry').value='';
+    toast('✅ تم إضافة العرض');
+  }catch(e){toast('خطأ: '+e.message);}
+}
+
+async function addBundle(){
+  const name=document.getElementById('bundleName').value.trim();
+  const price=+document.getElementById('bundlePrice').value;
+  const desc=document.getElementById('bundleDesc').value.trim();
+  const label=document.getElementById('bundleLabel').value.trim()||'عرض الحزمة';
+  const expiry=document.getElementById('bundleExpiry').value||null;
+  const checked=[...document.querySelectorAll('#bundleProductsSelect input:checked')];
+  if(!name){toast('⚠️ ادخل اسم الحزمة');return;}
+  if(!price||price<=0){toast('⚠️ ادخل سعر الحزمة');return;}
+  if(checked.length<2){toast('⚠️ اختار منتجين على الأقل');return;}
+  const productIds=checked.map(c=>+c.value);
+  const originalPrice=checked.reduce((s,c)=>s+parseInt(c.dataset.price),0);
+  if(price>=originalPrice){toast('⚠️ سعر الحزمة لازم يكون أقل من مجموع الأسعار');return;}
+  try{
+    const res=await sb('bundles',{method:'POST',body:JSON.stringify({name,description:desc,product_ids:productIds,bundle_price:price,original_price:originalPrice,label,expires_at:expiry,active:true})});
+    if(res&&res[0])bundlesData.unshift(res[0]);
+    renderBundles();
+    document.getElementById('bundleName').value='';
+    document.getElementById('bundlePrice').value='';
+    document.getElementById('bundleDesc').value='';
+    document.getElementById('bundleExpiry').value='';
+    document.querySelectorAll('#bundleProductsSelect input').forEach(c=>c.checked=false);
+    document.getElementById('bundleSavingPreview').style.display='none';
+    toast('✅ تم إضافة الحزمة');
+  }catch(e){toast('خطأ: '+e.message);}
+}
+
+async function toggleOffer(id,val){
+  try{await sb(`offers?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({active:val})});const o=offersData.find(x=>x.id===id);if(o)o.active=val;renderSingleOffers();toast(val?'✅ العرض شغال':'⏸ العرض متوقف');}
+  catch(e){toast('خطأ في التحديث');}
+}
+async function deleteOffer(id){
+  if(!confirm('هتمسح العرض؟'))return;
+  try{await sb(`offers?id=eq.${id}`,{method:'DELETE'});offersData=offersData.filter(x=>x.id!==id);renderSingleOffers();toast('تم مسح العرض');}
+  catch(e){toast('خطأ في المسح');}
+}
+async function toggleBundle(id,val){
+  try{await sb(`bundles?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({active:val})});const b=bundlesData.find(x=>x.id===id);if(b)b.active=val;renderBundles();toast(val?'✅ الحزمة شغالة':'⏸ الحزمة متوقفة');}
+  catch(e){toast('خطأ في التحديث');}
+}
+async function deleteBundle(id){
+  if(!confirm('هتمسح الحزمة؟'))return;
+  try{await sb(`bundles?id=eq.${id}`,{method:'DELETE'});bundlesData=bundlesData.filter(x=>x.id!==id);renderBundles();toast('تم مسح الحزمة');}
+  catch(e){toast('خطأ في المسح');}
+}
+
 async function init(){
   await Promise.all([loadOrders(),loadAndRenderProducts()]);
   renderDashboard();

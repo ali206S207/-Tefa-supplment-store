@@ -225,6 +225,15 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
   </div>
 </div>
 
+<!-- BUNDLES SECTION -->
+<section class="section" id="bundles-section" style="display:none;padding-bottom:0;">
+  <div class="section-header">
+    <h2>🎁 عروض <span>الحزم</span></h2>
+    <p>وفر أكتر لما تشتري مع بعض</p>
+  </div>
+  <div id="bundlesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;max-width:1300px;margin:0 auto;"></div>
+</section>
+
 <section class="section" id="products-section">
   <div class="section-header">
     <h2>المنتجات <span>المتاحة</span></h2>
@@ -380,10 +389,74 @@ const pts=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random(
 const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const tg=+e.target.dataset.target;let c=0,s=tg/60;const tm=setInterval(()=>{c+=s;if(c>=tg){c=tg;clearInterval(tm);}e.target.textContent=Math.floor(c)+(tg===100?'':'+ ');},30);obs.unobserve(e.target);});},{threshold:.5});
 document.querySelectorAll('.counter').forEach(c=>obs.observe(c));
 
+let offersMap={}, bundlesList=[];
+
 async function loadProducts(){
   document.getElementById('productsGrid').innerHTML=`<div class="skeleton-grid">${Array(6).fill(`<div class="skeleton"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div></div></div>`).join('')}</div>`;
-  try{products=await sb('products?order=id.asc&select=*');renderCategories();renderProducts();}
+  try{
+    [products, offersMap, bundlesList] = await Promise.all([
+      sb('products?order=id.asc&select=*'),
+      sb('offers?active=eq.true&select=*').then(rows=>{
+        const now=new Date();
+        const map={};
+        rows.filter(o=>!o.expires_at||new Date(o.expires_at)>now).forEach(o=>map[o.product_id]=o);
+        return map;
+      }),
+      sb('bundles?active=eq.true&select=*').then(rows=>rows.filter(b=>!b.expires_at||new Date(b.expires_at)>new Date()))
+    ]);
+    renderCategories();renderProducts();renderBundles();
+  }
   catch(e){document.getElementById('productsGrid').innerHTML=`<p style="text-align:center;color:var(--gray);padding:3rem;grid-column:1/-1">حصل خطأ في تحميل المنتجات</p>`;}
+}
+
+function renderBundles(){
+  const section=document.getElementById('bundles-section');
+  const grid=document.getElementById('bundlesGrid');
+  if(!bundlesList.length){section.style.display='none';return;}
+  section.style.display='block';
+  grid.innerHTML=bundlesList.map(b=>{
+    const pIds=Array.isArray(b.product_ids)?b.product_ids:JSON.parse(b.product_ids||'[]');
+    const bProducts=pIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
+    const saving=b.original_price-b.bundle_price;
+    const pct=Math.round(saving/b.original_price*100);
+    return `<div style="background:var(--dark);border:1px solid rgba(201,168,76,0.35);border-radius:16px;overflow:hidden;transition:all 0.3s;" onmouseover="this.style.transform='translateY(-6px)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));padding:1.25rem 1.25rem 0.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;">${b.name}</div>
+          <span style="background:var(--red);color:#fff;font-size:0.75rem;font-weight:900;padding:0.25rem 0.6rem;border-radius:4px;">وفر ${pct}%</span>
+        </div>
+        ${b.description?`<div style="font-size:0.8rem;color:var(--gray);margin-bottom:0.5rem;">${b.description}</div>`:''}
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+          ${bProducts.map(p=>`<span style="background:var(--dark2);border:1px solid var(--border);padding:0.25rem 0.6rem;border-radius:4px;font-size:0.78rem;">${p.emoji||'📦'} ${p.name}</span>`).join('')}
+        </div>
+      </div>
+      <div style="padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.8rem;text-decoration:line-through;color:var(--gray);">${b.original_price.toLocaleString()} جنيه</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--gold);letter-spacing:2px;">${b.bundle_price.toLocaleString()} <span style="font-size:1rem;">جنيه</span></div>
+        </div>
+        <button onclick="addBundleToCart(${b.id})" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);border:none;padding:0.75rem 1.25rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:900;cursor:pointer;transition:all 0.3s;white-space:nowrap;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''">
+          <i class="fas fa-shopping-bag"></i> أضف للسلة
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addBundleToCart(bundleId){
+  const b=bundlesList.find(x=>x.id===bundleId);if(!b)return;
+  const pIds=Array.isArray(b.product_ids)?b.product_ids:JSON.parse(b.product_ids||'[]');
+  const bProducts=pIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
+  // Split bundle price proportionally
+  const originalTotal=bProducts.reduce((s,p)=>s+p.price,0);
+  bProducts.forEach(p=>{
+    const adjustedPrice=Math.round(b.bundle_price*(p.price/originalTotal));
+    const ex=cart.find(x=>x.id===p.id);
+    if(ex)ex.qty++;else cart.push({...p,price:adjustedPrice,qty:1,bundleName:b.name});
+  });
+  localStorage.setItem('tefa_cart',JSON.stringify(cart));
+  updateCartUI();
+  showToast(`🎁 تمت إضافة حزمة "${b.name}" للسلة`);
 }
 
 function renderCategories(active='الكل'){
@@ -395,20 +468,29 @@ function renderProducts(filter='الكل'){
   const f=filter==='الكل'?products:products.filter(p=>p.category===filter);
   const g=document.getElementById('productsGrid');
   g.className='products-grid';
-  g.innerHTML=f.map(p=>`
-    <div class="product-card ${!p.in_stock?'out-of-stock':''}" onclick="openProductModal(${p.id})">
-      ${p.badge?`<span class="product-badge">${p.badge}</span>`:''}
+  g.innerHTML=f.map(p=>{
+    const offer=offersMap[p.id];
+    const price=offer?offer.sale_price:p.price;
+    const priceHTML=offer
+      ? `<div class="product-price" style="display:flex;flex-direction:column;line-height:1.1;">
+           <span style="font-size:0.85rem;text-decoration:line-through;color:var(--gray);font-family:'Cairo',sans-serif;font-weight:400;">${p.price.toLocaleString()} ج</span>
+           <span style="color:#ff6b6b;">${price.toLocaleString()}<span style="font-size:0.85rem;color:var(--gray);font-family:'Cairo',sans-serif;font-weight:400;"> جنيه</span></span>
+         </div>`
+      : `<div class="product-price">${p.price.toLocaleString()}<span> جنيه</span></div>`;
+    return `<div class="product-card ${!p.in_stock?'out-of-stock':''}" onclick="openProductModal(${p.id})">
+      ${offer?`<span class="product-badge" style="background:linear-gradient(135deg,#e03535,#ff6b6b);">🔥 ${offer.label}</span>`:p.badge?`<span class="product-badge">${p.badge}</span>`:''}
       <div class="product-img">${p.img?`<img src="${p.img}" alt="${p.name}">`:`<span style="position:relative;z-index:1">${p.emoji}</span>`}</div>
       <div class="product-info">
         <div class="product-cat">${p.category}</div>
         <div class="product-name">${p.name}</div>
         <div class="product-flavor">${(p.flavors||[]).join(' · ')}</div>
         <div class="product-bottom">
-          <div class="product-price">${p.price.toLocaleString()}<span> جنيه</span></div>
+          ${priceHTML}
           ${p.in_stock?`<button class="add-to-cart-btn" onclick="event.stopPropagation();addToCart(${p.id})"><i class="fas fa-plus"></i></button>`:''}
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function filterProducts(cat,btn){document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderProducts(cat);}
@@ -436,7 +518,9 @@ function selectFlavor(el){document.querySelectorAll('.flavor-chip').forEach(c=>c
 
 function addToCart(id){
   const p=products.find(x=>x.id===id);if(!p||!p.in_stock)return;
-  const ex=cart.find(x=>x.id===id);if(ex)ex.qty++;else cart.push({...p,qty:1});
+  const offer=offersMap[p.id];
+  const price=offer?offer.sale_price:p.price;
+  const ex=cart.find(x=>x.id===id);if(ex)ex.qty++;else cart.push({...p,price,qty:1});
   localStorage.setItem('tefa_cart',JSON.stringify(cart));updateCartUI();showToast(`✅ تمت الإضافة: ${p.name}`);
 }
 function removeFromCart(id){cart=cart.filter(x=>x.id!==id);localStorage.setItem('tefa_cart',JSON.stringify(cart));updateCartUI();renderCartItems();}
