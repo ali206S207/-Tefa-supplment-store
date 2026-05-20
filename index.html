@@ -419,28 +419,78 @@ function renderBundles(){
     const bProducts=pIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
     const saving=b.original_price-b.bundle_price;
     const pct=Math.round(saving/b.original_price*100);
-    return `<div style="background:var(--dark);border:1px solid rgba(201,168,76,0.35);border-radius:16px;overflow:hidden;transition:all 0.3s;" onmouseover="this.style.transform='translateY(-6px)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.5)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
-      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));padding:1.25rem 1.25rem 0.75rem;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;">${b.name}</div>
-          <span style="background:var(--red);color:#fff;font-size:0.75rem;font-weight:900;padding:0.25rem 0.6rem;border-radius:4px;">وفر ${pct}%</span>
+    const bid=`bundle_${b.id}`;
+
+    // Images: cover first, then product images
+    const imgs=[
+      ...(b.cover_img?[{src:b.cover_img,label:'الحزمة'}]:[]),
+      ...bProducts.filter(p=>p.img).map(p=>({src:p.img,label:p.name}))
+    ];
+    const hasImgs=imgs.length>0;
+
+    const carouselHTML=hasImgs?`
+      <div id="${bid}_carousel" style="position:relative;height:200px;overflow:hidden;background:#0d0d0d;">
+        ${imgs.map((img,i)=>`
+          <div class="bundle-slide" data-carousel="${bid}" style="position:absolute;inset:0;opacity:${i===0?1:0};transition:opacity 0.8s ease;display:flex;align-items:center;justify-content:center;padding:1rem;">
+            <img src="${img.src}" alt="${img.label}" style="max-width:100%;max-height:100%;object-fit:contain;">
+          </div>`).join('')}
+        ${imgs.length>1?`
+        <div style="position:absolute;bottom:0.6rem;left:50%;transform:translateX(-50%);display:flex;gap:5px;">
+          ${imgs.map((_,i)=>`<div class="bundle-dot" data-carousel="${bid}" data-idx="${i}" style="width:6px;height:6px;border-radius:50%;background:${i===0?'var(--gold)':'rgba(255,255,255,0.3)'};transition:background 0.3s;cursor:pointer;" onclick="goSlide('${bid}',${i})"></div>`).join('')}
+        </div>`:''}
+      </div>`
+    :`<div style="height:160px;background:linear-gradient(135deg,#0d0d0d,#1a1a1a);display:flex;align-items:center;justify-content:center;gap:0.5rem;font-size:2rem;">
+        ${bProducts.map(p=>p.emoji||'📦').join(' ')}
+      </div>`;
+
+    return `<div style="background:var(--dark);border:1px solid rgba(201,168,76,0.35);border-radius:16px;overflow:hidden;transition:all 0.3s;" onmouseover="this.style.transform='translateY(-6px)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.5),0 0 30px rgba(201,168,76,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      ${carouselHTML}
+      <div style="padding:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;">🎁 ${b.name}</div>
+          <span style="background:var(--red);color:#fff;font-size:0.72rem;font-weight:900;padding:0.2rem 0.55rem;border-radius:4px;">وفر ${pct}%</span>
         </div>
-        ${b.description?`<div style="font-size:0.8rem;color:var(--gray);margin-bottom:0.5rem;">${b.description}</div>`:''}
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-          ${bProducts.map(p=>`<span style="background:var(--dark2);border:1px solid var(--border);padding:0.25rem 0.6rem;border-radius:4px;font-size:0.78rem;">${p.emoji||'📦'} ${p.name}</span>`).join('')}
+        ${b.description?`<div style="font-size:0.8rem;color:var(--gray);margin-bottom:0.6rem;">${b.description}</div>`:''}
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.85rem;">
+          ${bProducts.map(p=>`<span style="background:var(--dark2);border:1px solid var(--border);padding:0.2rem 0.55rem;border-radius:4px;font-size:0.75rem;">${p.emoji||'📦'} ${p.name}</span>`).join('')}
         </div>
-      </div>
-      <div style="padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:0.8rem;text-decoration:line-through;color:var(--gray);">${b.original_price.toLocaleString()} جنيه</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--gold);letter-spacing:2px;">${b.bundle_price.toLocaleString()} <span style="font-size:1rem;">جنيه</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:0.78rem;text-decoration:line-through;color:var(--gray);">${b.original_price.toLocaleString()} جنيه</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.7rem;color:var(--gold);letter-spacing:2px;">${b.bundle_price.toLocaleString()} <span style="font-size:0.9rem;font-family:'Cairo',sans-serif;">جنيه</span></div>
+          </div>
+          <button onclick="addBundleToCart(${b.id})" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);border:none;padding:0.75rem 1.1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.85rem;font-weight:900;cursor:pointer;transition:all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''">
+            <i class="fas fa-shopping-bag"></i> أضف للسلة
+          </button>
         </div>
-        <button onclick="addBundleToCart(${b.id})" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);border:none;padding:0.75rem 1.25rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:900;cursor:pointer;transition:all 0.3s;white-space:nowrap;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''">
-          <i class="fas fa-shopping-bag"></i> أضف للسلة
-        </button>
       </div>
     </div>`;
   }).join('');
+
+  // Start auto-rotate for each carousel
+  bundlesList.forEach(b=>{
+    const bid=`bundle_${b.id}`;
+    const pIds=Array.isArray(b.product_ids)?b.product_ids:JSON.parse(b.product_ids||'[]');
+    const bProducts=pIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
+    const imgCount=(b.cover_img?1:0)+bProducts.filter(p=>p.img).length;
+    if(imgCount>1) startCarousel(bid,imgCount);
+  });
+}
+
+const _carouselTimers={};
+const _carouselIdx={};
+function startCarousel(bid,total){
+  _carouselIdx[bid]=0;
+  clearInterval(_carouselTimers[bid]);
+  _carouselTimers[bid]=setInterval(()=>{
+    const next=(_carouselIdx[bid]+1)%total;
+    goSlide(bid,next);
+  },3000);
+}
+function goSlide(bid,idx){
+  _carouselIdx[bid]=idx;
+  document.querySelectorAll(`.bundle-slide[data-carousel="${bid}"]`).forEach((el,i)=>el.style.opacity=i===idx?'1':'0');
+  document.querySelectorAll(`.bundle-dot[data-carousel="${bid}"]`).forEach((el,i)=>el.style.background=i===idx?'var(--gold)':'rgba(255,255,255,0.3)');
 }
 
 function addBundleToCart(bundleId){
