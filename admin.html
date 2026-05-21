@@ -1298,21 +1298,25 @@ function fillCategorySelects(){
   });
 }
 
-function renderCategoriesPage(){
-  loadCategories().then(()=>{
-    const list=document.getElementById('categoriesAdminList');
-    if(!list)return;
-    if(!categoriesData.length){
-      list.innerHTML=`<div class="empty-state"><i class="fas fa-list"></i><p>مفيش أقسام</p></div>`;return;
-    }
-    list.innerHTML=categoriesData.map(c=>`
-      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--dark2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.6rem;">
-        <span style="font-size:1.4rem;width:36px;text-align:center;">${c.emoji}</span>
-        <span style="font-weight:700;flex:1;">${c.name}</span>
-        <span style="font-size:0.75rem;color:var(--gray);">${products.filter(p=>p.category===c.name).length} منتج</span>
-        <button class="action-btn danger" onclick="deleteCategory(${c.id},'${c.name}')"><i class="fas fa-trash"></i></button>
-      </div>`).join('');
-  });
+async function renderCategoriesPage(){
+  const list=document.getElementById('categoriesAdminList');
+  if(list)list.innerHTML=`<div style="text-align:center;padding:2rem;color:var(--gray);"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>`;
+  try{
+    categoriesData=await sb('categories?order=sort_order.asc&select=*');
+    fillCategorySelects();
+  }catch(e){toast('خطأ في تحميل الأقسام');return;}
+  if(!list)return;
+  if(!categoriesData.length){
+    list.innerHTML=`<div class="empty-state"><i class="fas fa-list"></i><p>مفيش أقسام، أضف قسم جديد</p></div>`;return;
+  }
+  list.innerHTML=categoriesData.map(c=>`
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--dark2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.6rem;">
+      <span style="font-size:1.4rem;width:36px;text-align:center;">${c.emoji||'📦'}</span>
+      <span style="font-weight:700;flex:1;">${c.name}</span>
+      <span style="font-size:0.75rem;color:var(--gray);background:var(--dark);padding:0.2rem 0.6rem;border-radius:4px;">${products.filter(p=>p.category===c.name).length} منتج</span>
+      <span style="font-size:0.7rem;color:${c.active?'var(--green)':'var(--red)'};">${c.active?'نشط':'مخفي'}</span>
+      <button class="action-btn danger" onclick="deleteCategory(${c.id},'${c.name}')"><i class="fas fa-trash"></i></button>
+    </div>`).join('');
 }
 
 async function addCategory(){
@@ -1326,7 +1330,7 @@ async function addCategory(){
     document.getElementById('newCatName').value='';
     document.getElementById('newCatEmoji').value='';
     fillCategorySelects();
-    renderCategoriesPage();
+    await renderCategoriesPage();
     toast(`✅ تم إضافة قسم "${name}"`);
   }catch(e){toast('خطأ: '+e.message);}
 }
@@ -1339,7 +1343,7 @@ async function deleteCategory(id,name){
     await sb(`categories?id=eq.${id}`,{method:'DELETE'});
     categoriesData=categoriesData.filter(c=>c.id!==id);
     fillCategorySelects();
-    renderCategoriesPage();
+    await renderCategoriesPage();
     toast('تم مسح القسم');
   }catch(e){toast('خطأ في المسح');}
 }
@@ -1348,11 +1352,10 @@ async function deleteCategory(id,name){
 async function loadSettingsPage(){
   try{
     const rows=await sb('settings?select=key,value');
-    rows.forEach(r=>{
-      if(r.key==='payment_number') document.getElementById('settingPaymentNumber').value=r.value;
-      if(r.key==='whatsapp_number') document.getElementById('settingWhatsapp').value=r.value;
-    });
-  }catch(e){toast('خطأ في تحميل الإعدادات');}
+    const map={};rows.forEach(r=>map[r.key]=r.value);
+    document.getElementById('settingPaymentNumber').value=map['payment_number']||'';
+    document.getElementById('settingWhatsapp').value=map['whatsapp_number']||'';
+  }catch(e){toast('خطأ في تحميل الإعدادات: '+e.message);}
 }
 
 async function saveSettings(){
@@ -1362,10 +1365,15 @@ async function saveSettings(){
   const btn=document.getElementById('saveSettingsBtn');
   btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
   try{
-    await Promise.all([
-      sb('settings?key=eq.payment_number',{method:'PATCH',body:JSON.stringify({value:payNum,updated_at:new Date().toISOString()})}),
-      sb('settings?key=eq.whatsapp_number',{method:'PATCH',body:JSON.stringify({value:waNum,updated_at:new Date().toISOString()})})
-    ]);
+    // Upsert both settings
+    await sb('settings',{
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify([
+        {key:'payment_number',value:payNum,updated_at:new Date().toISOString()},
+        {key:'whatsapp_number',value:waNum,updated_at:new Date().toISOString()}
+      ])
+    });
     toast('✅ تم حفظ الإعدادات — بيظهر في الموقع فوراً');
   }catch(e){toast('خطأ: '+e.message);}
   finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> حفظ الإعدادات';}
