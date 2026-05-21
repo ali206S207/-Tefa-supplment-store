@@ -313,7 +313,7 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
       </div>
       <div class="payment-info-box transfer-box" id="transferInfo" style="display:none">
         <p style="font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;">حول المبلغ على الرقم التالي:</p>
-        <div class="transfer-number">01004969522</div>
+        <div class="transfer-number" id="paymentNumberDisplay">...</div>
         <p style="font-size:0.8rem;color:var(--gray);margin-bottom:0.75rem;" id="transferMethodLabel">فودافون كاش / انستا باي</p>
         <div class="form-group" style="margin-bottom:0.75rem;">
           <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.5rem;text-transform:uppercase;">رقمك أو حساب الانستا اللي حولت منه *</label>
@@ -368,7 +368,26 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
 <script>
 const SB_URL='https://ublurrzfsxikexfhqbns.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVibHVycnpmc3hpa2V4ZmhxYm5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDEyODEsImV4cCI6MjA5MzExNzI4MX0.SPlW6T2iBg8tTkFbp1FXDKHaoZrkDlnUAxlUPNhIiFQ';
-const WHATSAPP='201228164202';
+let WHATSAPP='201228164202'; // fallback, overridden by DB
+let PAYMENT_NUMBER='01004969522'; // fallback, overridden by DB
+
+async function loadSettings(){
+  try{
+    const rows=await sb('settings?select=key,value');
+    rows.forEach(r=>{
+      if(r.key==='payment_number'){
+        PAYMENT_NUMBER=r.value;
+        const el=document.getElementById('paymentNumberDisplay');
+        if(el)el.textContent=r.value;
+      }
+      if(r.key==='whatsapp_number') WHATSAPP=r.value;
+    });
+  }catch(e){ 
+    // fallback to hardcoded values silently
+    const el=document.getElementById('paymentNumberDisplay');
+    if(el)el.textContent=PAYMENT_NUMBER;
+  }
+}
 
 
 async function sb(path,opts={}){
@@ -389,12 +408,12 @@ const pts=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random(
 const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const tg=+e.target.dataset.target;let c=0,s=tg/60;const tm=setInterval(()=>{c+=s;if(c>=tg){c=tg;clearInterval(tm);}e.target.textContent=Math.floor(c)+(tg===100?'':'+ ');},30);obs.unobserve(e.target);});},{threshold:.5});
 document.querySelectorAll('.counter').forEach(c=>obs.observe(c));
 
-let offersMap={}, bundlesList=[];
+let offersMap={}, bundlesList=[], categoriesList=[];
 
 async function loadProducts(){
   document.getElementById('productsGrid').innerHTML=`<div class="skeleton-grid">${Array(6).fill(`<div class="skeleton"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div></div></div>`).join('')}</div>`;
   try{
-    [products, offersMap, bundlesList] = await Promise.all([
+    [products, offersMap, bundlesList, categoriesList] = await Promise.all([
       sb('products?order=id.asc&select=*'),
       sb('offers?active=eq.true&select=*').then(rows=>{
         const now=new Date();
@@ -402,7 +421,8 @@ async function loadProducts(){
         rows.filter(o=>!o.expires_at||new Date(o.expires_at)>now).forEach(o=>map[o.product_id]=o);
         return map;
       }),
-      sb('bundles?active=eq.true&select=*').then(rows=>rows.filter(b=>!b.expires_at||new Date(b.expires_at)>new Date()))
+      sb('bundles?active=eq.true&select=*').then(rows=>rows.filter(b=>!b.expires_at||new Date(b.expires_at)>new Date())),
+      sb('categories?order=sort_order.asc&active=eq.true&select=name,emoji')
     ]);
     renderCategories();renderProducts();renderBundles();
   }
@@ -510,7 +530,10 @@ function addBundleToCart(bundleId){
 }
 
 function renderCategories(active='الكل'){
-  const cats=['الكل',...new Set(products.map(p=>p.category))];
+  // Use DB categories if loaded, fallback to product categories
+  const cats=categoriesList.length
+    ? ['الكل',...categoriesList.map(c=>c.name)]
+    : ['الكل',...new Set(products.map(p=>p.category))];
   document.getElementById('categoriesBar').innerHTML=cats.map(c=>`<button class="cat-btn ${c===active?'active':''}" onclick="filterProducts('${c}',this)">${c}</button>`).join('');
 }
 
@@ -682,6 +705,7 @@ function resetCoupon(){appliedCoupon=null;discountValue=0;const l=document.getEl
 
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
+loadSettings();
 loadProducts();updateCartUI();
 </script>
 </body>

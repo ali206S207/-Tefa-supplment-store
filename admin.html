@@ -143,6 +143,8 @@
     <div class="nav-item" onclick="showPage('products',this)"><i class="fas fa-box"></i> المنتجات</div>
     <div class="nav-item" onclick="showPage('addProduct',this)"><i class="fas fa-plus-circle"></i> إضافة منتج</div>
     <div class="nav-item" onclick="showPage('offers',this)"><i class="fas fa-tags"></i> العروض</div>
+    <div class="nav-item" onclick="showPage('settings',this)"><i class="fas fa-cog"></i> الإعدادات</div>
+    <div class="nav-item" onclick="showPage('categories',this)"><i class="fas fa-list"></i> الأقسام</div>
   </nav>
   <div class="sidebar-footer">
     <a class="back-btn" href="index.html"><i class="fas fa-arrow-right"></i> العودة للمتجر</a>
@@ -219,7 +221,7 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label>اسم المنتج *</label><input type="text" id="apName" placeholder="مثال: Whey Protein Gold"></div>
-            <div class="form-group"><label>الفئة *</label><select id="apCat"><option>بروتين</option><option>كرياتين</option><option>قبل التمرين</option><option>أحماض أمينية</option><option>زيادة الوزن</option><option>فيتامينات</option><option>أخرى</option></select></div>
+            <div class="form-group"><label>الفئة *</label><select id="apCat"></select></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>السعر (جنيه) *</label><input type="number" id="apPrice" placeholder="450"></div>
@@ -350,7 +352,7 @@
       </div>
       <div class="form-row">
         <div class="form-group"><label>اسم المنتج *</label><input type="text" id="editName" placeholder="اسم المنتج"></div>
-        <div class="form-group"><label>الفئة *</label><select id="editCat"><option>بروتين</option><option>كرياتين</option><option>قبل التمرين</option><option>أحماض أمينية</option><option>زيادة الوزن</option><option>فيتامينات</option><option>أخرى</option></select></div>
+        <div class="form-group"><label>الفئة *</label><select id="editCat"></select></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>السعر (جنيه) *</label><input type="number" id="editPrice" placeholder="450"></div>
@@ -367,10 +369,124 @@
         <button class="action-btn danger" onclick="confirmDeleteFromEdit()"><i class="fas fa-trash"></i> مسح المنتج</button>
       </div>
     </div>
+
+    <!-- CATEGORIES PAGE -->
+    <div class="page" id="page-categories">
+      <div class="section-card" style="max-width:700px;">
+        <div class="section-card-header">
+          <h2>📂 إدارة الأقسام</h2>
+        </div>
+        <!-- ADD FORM -->
+        <div style="padding:1.25rem;border-bottom:1px solid var(--border);display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:160px;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.4rem;text-transform:uppercase;">اسم القسم</label>
+            <input type="text" id="newCatName" placeholder="مثال: حرق الدهون"
+              style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.7rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;outline:none;direction:rtl;"
+              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div style="width:90px;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.4rem;text-transform:uppercase;">إيموجي</label>
+            <input type="text" id="newCatEmoji" placeholder="🔥" maxlength="2"
+              style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.7rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:1.2rem;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <button class="primary-btn" style="padding:0.7rem 1.25rem;" onclick="addCategory()"><i class="fas fa-plus"></i> إضافة</button>
+        </div>
+        <!-- LIST -->
+        <div id="categoriesAdminList" style="padding:1rem;"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="section-card" style="max-width:600px;">
+        <div class="section-card-header"><h2>⚙️ إعدادات الدفع</h2></div>
+        <div class="form-section">
+          <div style="background:rgba(224,53,53,0.08);border:1px solid rgba(224,53,53,0.25);border-right:3px solid var(--red);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:0.75rem;align-items:flex-start;">
+            <i class="fas fa-shield-alt" style="color:var(--red);margin-top:2px;flex-shrink:0;"></i>
+            <p style="font-size:0.85rem;color:#ff9090;line-height:1.6;">الأرقام دي محفوظة في قاعدة البيانات بس — مش في الكود. أي تغيير هنا بيظهر في الموقع فوراً.</p>
+          </div>
+          <div class="form-group">
+            <label>رقم الدفع (فودافون كاش / انستا باي)</label>
+            <input type="text" id="settingPaymentNumber" placeholder="01xxxxxxxxx" style="font-family:'Rajdhani',sans-serif;font-size:1.1rem;letter-spacing:2px;">
+          </div>
+          <div class="form-group">
+            <label>رقم الواتساب (للتواصل)</label>
+            <input type="text" id="settingWhatsapp" placeholder="201xxxxxxxxx">
+          </div>
+          <button class="primary-btn" id="saveSettingsBtn" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <!-- IMAGE VIEWER -->
+<!-- EDIT OFFER MODAL -->
+<div class="modal-overlay" id="editOfferModal">
+  <div class="edit-modal" style="max-width:500px;">
+    <div class="edit-modal-header">
+      <h3>✏️ تعديل العرض</h3>
+      <button class="close-btn" onclick="closeEditOffer()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-section">
+      <input type="hidden" id="editOfferId">
+      <div class="form-group"><label>المنتج</label><select id="editOfferProductId" style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.75rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;outline:none;direction:rtl;"></select></div>
+      <div class="form-row">
+        <div class="form-group"><label>سعر العرض (جنيه)</label><input type="number" id="editOfferSalePrice" placeholder="950"></div>
+        <div class="form-group"><label>تسمية العرض</label><input type="text" id="editOfferLabel" placeholder="عرض خاص"></div>
+      </div>
+      <div class="form-group"><label>تاريخ الانتهاء (اختياري)</label><input type="datetime-local" id="editOfferExpiry"></div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <button class="primary-btn" onclick="saveEditOffer()"><i class="fas fa-save"></i> حفظ</button>
+        <button class="action-btn danger" onclick="deleteOffer(+document.getElementById('editOfferId').value);closeEditOffer()"><i class="fas fa-trash"></i> مسح</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT BUNDLE MODAL -->
+<div class="modal-overlay" id="editBundleModal">
+  <div class="edit-modal" style="max-width:600px;">
+    <div class="edit-modal-header">
+      <h3>✏️ تعديل الحزمة</h3>
+      <button class="close-btn" onclick="closeEditBundle()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-section">
+      <input type="hidden" id="editBundleId">
+      <div class="form-group">
+        <label>صورة الغلاف</label>
+        <div class="img-upload-area" id="editBundleImgArea" onclick="document.getElementById('editBundleImgInput').click()" style="min-height:120px;">
+          <input type="file" accept="image/*" id="editBundleImgInput" onchange="previewEditBundleImg(this)">
+          <i class="fas fa-image"></i><p>صورة غلاف الحزمة</p>
+          <img id="editBundleImgPreview" class="img-upload-preview" style="display:none;" alt="">
+          <div class="img-upload-overlay"><span><i class="fas fa-pencil-alt"></i> تغيير</span></div>
+          <div class="upload-progress" id="editBundleUploadProgress"><div class="upload-progress-bar" id="editBundleUploadBar"></div></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>اسم الحزمة</label><input type="text" id="editBundleName" placeholder="Starter Pack"></div>
+        <div class="form-group"><label>سعر الحزمة (جنيه)</label><input type="number" id="editBundlePrice" placeholder="1400"></div>
+      </div>
+      <div class="form-group"><label>وصف الحزمة</label><input type="text" id="editBundleDesc" placeholder="أفضل مجموعة للمبتدئين"></div>
+      <div class="form-group">
+        <label>المنتجات</label>
+        <div id="editBundleProductsSelect" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;max-height:200px;overflow-y:auto;padding:0.75rem;background:var(--dark2);border:1px solid var(--border);border-radius:8px;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>تسمية الحزمة</label><input type="text" id="editBundleLabel" placeholder="عرض الحزمة"></div>
+        <div class="form-group"><label>تاريخ الانتهاء (اختياري)</label><input type="datetime-local" id="editBundleExpiry"></div>
+      </div>
+      <div id="editBundleSavingPreview" style="display:none;background:rgba(46,160,67,0.1);border:1px solid rgba(46,160,67,0.3);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.9rem;color:#56d364;font-weight:700;"></div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <button class="primary-btn" onclick="saveEditBundle()"><i class="fas fa-save"></i> حفظ</button>
+        <button class="action-btn danger" onclick="deleteBundle(+document.getElementById('editBundleId').value);closeEditBundle()"><i class="fas fa-trash"></i> مسح</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ORDER DETAILS MODAL -->
 <div class="modal-overlay" id="orderDetailsModal">
   <div class="edit-modal" style="max-width:580px;">
@@ -488,12 +604,14 @@ function showPage(id,navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(navEl)navEl.classList.add('active');
-  const titles={dashboard:'الرئيسية',orders:'الطلبات',products:'المنتجات',addProduct:'إضافة منتج',offers:'العروض والحزم'};
+  const titles={dashboard:'الرئيسية',orders:'الطلبات',products:'المنتجات',addProduct:'إضافة منتج',offers:'العروض والحزم',settings:'الإعدادات',categories:'إدارة الأقسام'};
   document.getElementById('pageTitle').textContent=titles[id]||id;
   if(id==='orders')renderOrders();
   if(id==='products'){loadAndRenderProducts();}
   if(id==='dashboard')renderDashboard();
   if(id==='offers')renderOffersPage();
+  if(id==='settings')loadSettingsPage();
+  if(id==='categories')renderCategoriesPage();
 }
 
 // ===== DASHBOARD =====
@@ -927,6 +1045,7 @@ function singleOfferCardHTML(o){
     </div>
     <div style="display:flex;gap:0.5rem;align-items:center;">
       <div class="toggle-switch ${o.active&&!expired?'on':''}" onclick="toggleOffer(${o.id},${!o.active})" title="${o.active?'تعطيل':'تفعيل'}"></div>
+      <button class="action-btn" onclick="openEditOffer(${o.id})"><i class="fas fa-edit"></i></button>
       <button class="action-btn danger" onclick="deleteOffer(${o.id})"><i class="fas fa-trash"></i></button>
     </div>
   </div>`;
@@ -961,6 +1080,7 @@ function bundleCardHTML(b){
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <div class="toggle-switch ${b.active&&!expired?'on':''}" onclick="toggleBundle(${b.id},${!b.active})"></div>
+        <button class="action-btn" onclick="openEditBundle(${b.id})"><i class="fas fa-edit"></i></button>
         <button class="action-btn danger" onclick="deleteBundle(${b.id})"><i class="fas fa-trash"></i></button>
       </div>
     </div>
@@ -1034,6 +1154,113 @@ async function addBundle(){
   }catch(e){toast('خطأ: '+e.message);}
 }
 
+// ===== EDIT OFFER =====
+function openEditOffer(id){
+  const o=offersData.find(x=>x.id===id);if(!o)return;
+  document.getElementById('editOfferId').value=id;
+  const sel=document.getElementById('editOfferProductId');
+  sel.innerHTML=products.map(p=>`<option value="${p.id}" ${p.id===o.product_id?'selected':''}>${p.name} — ${p.price.toLocaleString()} ج</option>`).join('');
+  document.getElementById('editOfferSalePrice').value=o.sale_price;
+  document.getElementById('editOfferLabel').value=o.label||'';
+  document.getElementById('editOfferExpiry').value=o.expires_at?o.expires_at.slice(0,16):'';
+  document.getElementById('editOfferModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeEditOffer(){document.getElementById('editOfferModal').classList.remove('open');document.body.style.overflow='';}
+
+async function saveEditOffer(){
+  const id=+document.getElementById('editOfferId').value;
+  const productId=+document.getElementById('editOfferProductId').value;
+  const salePrice=+document.getElementById('editOfferSalePrice').value;
+  const label=document.getElementById('editOfferLabel').value.trim()||'عرض خاص';
+  const expiry=document.getElementById('editOfferExpiry').value||null;
+  const p=products.find(x=>x.id===productId);
+  if(!salePrice||salePrice<=0){toast('⚠️ ادخل سعر العرض');return;}
+  if(p&&salePrice>=p.price){toast('⚠️ سعر العرض لازم يكون أقل من الأصلي');return;}
+  try{
+    await sb(`offers?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({product_id:productId,sale_price:salePrice,label,expires_at:expiry})});
+    const o=offersData.find(x=>x.id===id);
+    if(o){o.product_id=productId;o.sale_price=salePrice;o.label=label;o.expires_at=expiry;}
+    closeEditOffer();renderSingleOffers();toast('✅ تم حفظ العرض');
+  }catch(e){toast('خطأ: '+e.message);}
+}
+
+// ===== EDIT BUNDLE =====
+let editBundleImgFile=null, currentEditBundleImgUrl='';
+
+function previewEditBundleImg(input){
+  const file=input.files[0];if(!file)return;
+  editBundleImgFile=file;
+  const prev=document.getElementById('editBundleImgPreview');
+  prev.src=URL.createObjectURL(file);prev.style.display='block';
+}
+
+function openEditBundle(id){
+  const b=bundlesData.find(x=>x.id===id);if(!b)return;
+  editBundleImgFile=null;
+  currentEditBundleImgUrl=b.cover_img||'';
+  document.getElementById('editBundleId').value=id;
+  document.getElementById('editBundleName').value=b.name||'';
+  document.getElementById('editBundlePrice').value=b.bundle_price||'';
+  document.getElementById('editBundleDesc').value=b.description||'';
+  document.getElementById('editBundleLabel').value=b.label||'عرض الحزمة';
+  document.getElementById('editBundleExpiry').value=b.expires_at?b.expires_at.slice(0,16):'';
+  const prev=document.getElementById('editBundleImgPreview');
+  if(b.cover_img){prev.src=b.cover_img;prev.style.display='block';}else{prev.style.display='none';}
+  // Populate products checkboxes
+  const pIds=Array.isArray(b.product_ids)?b.product_ids:JSON.parse(b.product_ids||'[]');
+  const container=document.getElementById('editBundleProductsSelect');
+  container.innerHTML=products.map(p=>`
+    <label style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;background:var(--dark);border:1px solid var(--border);border-radius:6px;cursor:pointer;">
+      <input type="checkbox" value="${p.id}" data-price="${p.price}" ${pIds.includes(p.id)?'checked':''} style="accent-color:var(--gold);" onchange="updateEditBundlePreview()">
+      <span style="font-size:0.85rem;">${p.emoji||'📦'} ${p.name}</span>
+      <span style="margin-right:auto;font-size:0.8rem;color:var(--gold);font-weight:700;">${p.price.toLocaleString()} ج</span>
+    </label>`).join('');
+  updateEditBundlePreview();
+  document.getElementById('editBundleModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeEditBundle(){document.getElementById('editBundleModal').classList.remove('open');document.body.style.overflow='';}
+
+function updateEditBundlePreview(){
+  const checked=[...document.querySelectorAll('#editBundleProductsSelect input:checked')];
+  const originalTotal=checked.reduce((s,c)=>s+parseInt(c.dataset.price),0);
+  const bundlePrice=+document.getElementById('editBundlePrice').value||0;
+  const preview=document.getElementById('editBundleSavingPreview');
+  if(checked.length>=2&&bundlePrice>0){
+    const saving=originalTotal-bundlePrice;
+    preview.style.display='block';
+    preview.innerHTML=`السعر الأصلي: ${originalTotal.toLocaleString()} ج &nbsp;|&nbsp; سعر الحزمة: ${bundlePrice.toLocaleString()} ج &nbsp;|&nbsp; 💰 توفير: ${saving.toLocaleString()} ج (${Math.round(saving/originalTotal*100)}%)`;
+  }else{preview.style.display='none';}
+}
+
+async function saveEditBundle(){
+  const id=+document.getElementById('editBundleId').value;
+  const name=document.getElementById('editBundleName').value.trim();
+  const price=+document.getElementById('editBundlePrice').value;
+  const desc=document.getElementById('editBundleDesc').value.trim();
+  const label=document.getElementById('editBundleLabel').value.trim()||'عرض الحزمة';
+  const expiry=document.getElementById('editBundleExpiry').value||null;
+  const checked=[...document.querySelectorAll('#editBundleProductsSelect input:checked')];
+  if(!name){toast('⚠️ ادخل اسم الحزمة');return;}
+  if(!price||price<=0){toast('⚠️ ادخل سعر الحزمة');return;}
+  if(checked.length<2){toast('⚠️ اختار منتجين على الأقل');return;}
+  const productIds=checked.map(c=>+c.value);
+  const originalPrice=checked.reduce((s,c)=>s+parseInt(c.dataset.price),0);
+  if(price>=originalPrice){toast('⚠️ سعر الحزمة لازم يكون أقل من مجموع الأسعار');return;}
+  try{
+    let coverImg=currentEditBundleImgUrl;
+    if(editBundleImgFile){
+      toast('جاري رفع الصورة...');
+      coverImg=await uploadImage(editBundleImgFile,'editBundleUploadBar','editBundleUploadProgress');
+    }
+    const updates={name,description:desc,product_ids:productIds,bundle_price:price,original_price:originalPrice,label,expires_at:expiry,cover_img:coverImg};
+    await sb(`bundles?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(updates)});
+    const b=bundlesData.find(x=>x.id===id);if(b)Object.assign(b,updates);
+    closeEditBundle();renderBundles();toast('✅ تم حفظ الحزمة');
+  }catch(e){toast('خطأ: '+e.message);}
+}
+
 async function toggleOffer(id,val){
   try{await sb(`offers?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({active:val})});const o=offersData.find(x=>x.id===id);if(o)o.active=val;renderSingleOffers();toast(val?'✅ العرض شغال':'⏸ العرض متوقف');}
   catch(e){toast('خطأ في التحديث');}
@@ -1053,8 +1280,99 @@ async function deleteBundle(id){
   catch(e){toast('خطأ في المسح');}
 }
 
+// ===== CATEGORIES =====
+let categoriesData=[];
+
+async function loadCategories(){
+  try{
+    categoriesData=await sb('categories?order=sort_order.asc&active=eq.true&select=*');
+    fillCategorySelects();
+  }catch(e){console.warn('categories load failed',e);}
+}
+
+function fillCategorySelects(){
+  const opts=categoriesData.map(c=>`<option value="${c.name}">${c.emoji} ${c.name}</option>`).join('');
+  ['apCat','editCat'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ const cur=el.value; el.innerHTML=opts; if(cur)el.value=cur; }
+  });
+}
+
+function renderCategoriesPage(){
+  loadCategories().then(()=>{
+    const list=document.getElementById('categoriesAdminList');
+    if(!list)return;
+    if(!categoriesData.length){
+      list.innerHTML=`<div class="empty-state"><i class="fas fa-list"></i><p>مفيش أقسام</p></div>`;return;
+    }
+    list.innerHTML=categoriesData.map(c=>`
+      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--dark2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.6rem;">
+        <span style="font-size:1.4rem;width:36px;text-align:center;">${c.emoji}</span>
+        <span style="font-weight:700;flex:1;">${c.name}</span>
+        <span style="font-size:0.75rem;color:var(--gray);">${products.filter(p=>p.category===c.name).length} منتج</span>
+        <button class="action-btn danger" onclick="deleteCategory(${c.id},'${c.name}')"><i class="fas fa-trash"></i></button>
+      </div>`).join('');
+  });
+}
+
+async function addCategory(){
+  const name=document.getElementById('newCatName').value.trim();
+  const emoji=document.getElementById('newCatEmoji').value.trim()||'📦';
+  if(!name){toast('⚠️ ادخل اسم القسم');return;}
+  if(categoriesData.find(c=>c.name===name)){toast('⚠️ القسم ده موجود بالفعل');return;}
+  try{
+    const res=await sb('categories',{method:'POST',body:JSON.stringify({name,emoji,sort_order:categoriesData.length+1,active:true})});
+    if(res&&res[0])categoriesData.push(res[0]);
+    document.getElementById('newCatName').value='';
+    document.getElementById('newCatEmoji').value='';
+    fillCategorySelects();
+    renderCategoriesPage();
+    toast(`✅ تم إضافة قسم "${name}"`);
+  }catch(e){toast('خطأ: '+e.message);}
+}
+
+async function deleteCategory(id,name){
+  const count=products.filter(p=>p.category===name).length;
+  const msg=count>0?`في ${count} منتج في قسم "${name}"، لو مسحته المنتجات هتفضل بس مش هتبان في الفلتر. متأكد؟`:`هتمسح قسم "${name}"؟`;
+  if(!confirm(msg))return;
+  try{
+    await sb(`categories?id=eq.${id}`,{method:'DELETE'});
+    categoriesData=categoriesData.filter(c=>c.id!==id);
+    fillCategorySelects();
+    renderCategoriesPage();
+    toast('تم مسح القسم');
+  }catch(e){toast('خطأ في المسح');}
+}
+
+// ===== SETTINGS =====
+async function loadSettingsPage(){
+  try{
+    const rows=await sb('settings?select=key,value');
+    rows.forEach(r=>{
+      if(r.key==='payment_number') document.getElementById('settingPaymentNumber').value=r.value;
+      if(r.key==='whatsapp_number') document.getElementById('settingWhatsapp').value=r.value;
+    });
+  }catch(e){toast('خطأ في تحميل الإعدادات');}
+}
+
+async function saveSettings(){
+  const payNum=document.getElementById('settingPaymentNumber').value.trim();
+  const waNum=document.getElementById('settingWhatsapp').value.trim();
+  if(!payNum||!waNum){toast('⚠️ اكمل الحقلين');return;}
+  const btn=document.getElementById('saveSettingsBtn');
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+  try{
+    await Promise.all([
+      sb('settings?key=eq.payment_number',{method:'PATCH',body:JSON.stringify({value:payNum,updated_at:new Date().toISOString()})}),
+      sb('settings?key=eq.whatsapp_number',{method:'PATCH',body:JSON.stringify({value:waNum,updated_at:new Date().toISOString()})})
+    ]);
+    toast('✅ تم حفظ الإعدادات — بيظهر في الموقع فوراً');
+  }catch(e){toast('خطأ: '+e.message);}
+  finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> حفظ الإعدادات';}
+}
+
 async function init(){
-  await Promise.all([loadOrders(),loadAndRenderProducts()]);
+  await Promise.all([loadOrders(),loadAndRenderProducts(),loadCategories()]);
   renderDashboard();
 }
 init();
