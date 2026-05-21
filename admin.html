@@ -326,6 +326,51 @@
       </div>
     </div>
 
+    <!-- CATEGORIES PAGE -->
+    <div class="page" id="page-categories">
+      <div class="section-card" style="max-width:700px;">
+        <div class="section-card-header"><h2>📂 إدارة الأقسام</h2></div>
+        <div style="padding:1.25rem;border-bottom:1px solid var(--border);display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:160px;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.4rem;text-transform:uppercase;">اسم القسم</label>
+            <input type="text" id="newCatName" placeholder="مثال: حرق الدهون"
+              style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.7rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;outline:none;direction:rtl;"
+              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div style="width:90px;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.4rem;text-transform:uppercase;">إيموجي</label>
+            <input type="text" id="newCatEmoji" placeholder="🔥" maxlength="2"
+              style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.7rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:1.2rem;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <button class="primary-btn" style="padding:0.7rem 1.25rem;" onclick="addCategory()"><i class="fas fa-plus"></i> إضافة</button>
+        </div>
+        <div id="categoriesAdminList" style="padding:1rem;"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="section-card" style="max-width:600px;">
+        <div class="section-card-header"><h2>⚙️ إعدادات الدفع</h2></div>
+        <div class="form-section">
+          <div style="background:rgba(224,53,53,0.08);border:1px solid rgba(224,53,53,0.25);border-right:3px solid var(--red);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:0.75rem;align-items:flex-start;">
+            <i class="fas fa-shield-alt" style="color:var(--red);margin-top:2px;flex-shrink:0;"></i>
+            <p style="font-size:0.85rem;color:#ff9090;line-height:1.6;">الأرقام دي محفوظة في قاعدة البيانات — أي تغيير هنا بيظهر في الموقع فوراً.</p>
+          </div>
+          <div class="form-group">
+            <label>رقم الدفع (فودافون كاش / انستا باي)</label>
+            <input type="text" id="settingPaymentNumber" placeholder="01xxxxxxxxx" style="font-family:'Rajdhani',sans-serif;font-size:1.1rem;letter-spacing:2px;">
+          </div>
+          <div class="form-group">
+            <label>رقم الواتساب (للتواصل)</label>
+            <input type="text" id="settingWhatsapp" placeholder="201xxxxxxxxx">
+          </div>
+          <button class="primary-btn" id="saveSettingsBtn" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -369,56 +414,6 @@
         <button class="action-btn danger" onclick="confirmDeleteFromEdit()"><i class="fas fa-trash"></i> مسح المنتج</button>
       </div>
     </div>
-
-    <!-- CATEGORIES PAGE -->
-    <div class="page" id="page-categories">
-      <div class="section-card" style="max-width:700px;">
-        <div class="section-card-header">
-          <h2>📂 إدارة الأقسام</h2>
-        </div>
-        <!-- ADD FORM -->
-        <div style="padding:1.25rem;border-bottom:1px solid var(--border);display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
-          <div style="flex:1;min-width:160px;">
-            <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.4rem;text-transform:uppercase;">اسم القسم</label>
-            <input type="text" id="newCatName" placeholder="مثال: حرق الدهون"
-              style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.7rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;outline:none;direction:rtl;"
-              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
-          </div>
-          <div style="width:90px;">
-            <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.4rem;text-transform:uppercase;">إيموجي</label>
-            <input type="text" id="newCatEmoji" placeholder="🔥" maxlength="2"
-              style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.7rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:1.2rem;outline:none;text-align:center;"
-              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
-          </div>
-          <button class="primary-btn" style="padding:0.7rem 1.25rem;" onclick="addCategory()"><i class="fas fa-plus"></i> إضافة</button>
-        </div>
-        <!-- LIST -->
-        <div id="categoriesAdminList" style="padding:1rem;"></div>
-      </div>
-    </div>
-
-    <!-- SETTINGS PAGE -->
-    <div class="page" id="page-settings">
-      <div class="section-card" style="max-width:600px;">
-        <div class="section-card-header"><h2>⚙️ إعدادات الدفع</h2></div>
-        <div class="form-section">
-          <div style="background:rgba(224,53,53,0.08);border:1px solid rgba(224,53,53,0.25);border-right:3px solid var(--red);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:0.75rem;align-items:flex-start;">
-            <i class="fas fa-shield-alt" style="color:var(--red);margin-top:2px;flex-shrink:0;"></i>
-            <p style="font-size:0.85rem;color:#ff9090;line-height:1.6;">الأرقام دي محفوظة في قاعدة البيانات بس — مش في الكود. أي تغيير هنا بيظهر في الموقع فوراً.</p>
-          </div>
-          <div class="form-group">
-            <label>رقم الدفع (فودافون كاش / انستا باي)</label>
-            <input type="text" id="settingPaymentNumber" placeholder="01xxxxxxxxx" style="font-family:'Rajdhani',sans-serif;font-size:1.1rem;letter-spacing:2px;">
-          </div>
-          <div class="form-group">
-            <label>رقم الواتساب (للتواصل)</label>
-            <input type="text" id="settingWhatsapp" placeholder="201xxxxxxxxx">
-          </div>
-          <button class="primary-btn" id="saveSettingsBtn" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 
