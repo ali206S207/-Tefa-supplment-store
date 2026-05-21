@@ -145,6 +145,7 @@
     <div class="nav-item" onclick="showPage('offers',this)"><i class="fas fa-tags"></i> العروض</div>
     <div class="nav-item" onclick="showPage('settings',this)"><i class="fas fa-cog"></i> الإعدادات</div>
     <div class="nav-item" onclick="showPage('categories',this)"><i class="fas fa-list"></i> الأقسام</div>
+    <div class="nav-item" onclick="showPage('tiers',this)"><i class="fas fa-percentage"></i> خصومات تلقائية</div>
   </nav>
   <div class="sidebar-footer">
     <a class="back-btn" href="index.html"><i class="fas fa-arrow-right"></i> العودة للمتجر</a>
@@ -346,6 +347,53 @@
           <button class="primary-btn" style="padding:0.7rem 1.25rem;" onclick="addCategory()"><i class="fas fa-plus"></i> إضافة</button>
         </div>
         <div id="categoriesAdminList" style="padding:1rem;"></div>
+      </div>
+    </div>
+
+    <!-- DISCOUNT TIERS PAGE -->
+    <div class="page" id="page-tiers">
+      <div class="section-card" style="max-width:750px;">
+        <div class="section-card-header"><h2>⚡ خصومات تلقائية</h2></div>
+
+        <!-- HOW IT WORKS -->
+        <div style="padding:1.25rem;border-bottom:1px solid var(--border);background:var(--gold-dim);">
+          <p style="font-size:0.85rem;color:rgba(245,245,245,0.7);line-height:1.7;">
+            <i class="fas fa-info-circle" style="color:var(--gold);margin-left:0.4rem;"></i>
+            الخصم بيتطبق <strong>أوتوماتيك</strong> في الـ checkout لما قيمة الطلب تعدي الحد المحدد.
+            لو في أكتر من مستوى ينطبق، بيتطبق <strong>أعلى خصم</strong> بس.
+          </p>
+        </div>
+
+        <!-- ADD FORM -->
+        <div style="padding:1.25rem;border-bottom:1px solid var(--border);">
+          <div style="font-size:0.8rem;font-weight:700;letter-spacing:1px;color:var(--gold);margin-bottom:1rem;text-transform:uppercase;">إضافة مستوى جديد</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>الحد الأدنى (جنيه)</label>
+              <input type="number" id="tierMinAmount" placeholder="500" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>نوع الخصم</label>
+              <select id="tierType" onchange="updateTierValueVisibility()" style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.75rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.9rem;outline:none;direction:rtl;">
+                <option value="percent">نسبة مئوية %</option>
+                <option value="fixed">مبلغ ثابت (جنيه)</option>
+                <option value="free_shipping">توصيل مجاني</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;" id="tierValueGroup">
+              <label>قيمة الخصم</label>
+              <input type="number" id="tierValue" placeholder="10" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>وصف يظهر للعميل</label>
+            <input type="text" id="tierLabel" placeholder="مثال: خصم 10% على طلبات فوق 500 جنيه">
+          </div>
+          <button class="primary-btn" onclick="addTier()"><i class="fas fa-plus"></i> إضافة</button>
+        </div>
+
+        <!-- TIERS LIST -->
+        <div id="tiersAdminList" style="padding:1rem;"></div>
       </div>
     </div>
 
@@ -599,7 +647,7 @@ function showPage(id,navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(navEl)navEl.classList.add('active');
-  const titles={dashboard:'الرئيسية',orders:'الطلبات',products:'المنتجات',addProduct:'إضافة منتج',offers:'العروض والحزم',settings:'الإعدادات',categories:'إدارة الأقسام'};
+  const titles={dashboard:'الرئيسية',orders:'الطلبات',products:'المنتجات',addProduct:'إضافة منتج',offers:'العروض والحزم',settings:'الإعدادات',categories:'إدارة الأقسام',tiers:'خصومات تلقائية'};
   document.getElementById('pageTitle').textContent=titles[id]||id;
   if(id==='orders')renderOrders();
   if(id==='products'){loadAndRenderProducts();}
@@ -607,6 +655,7 @@ function showPage(id,navEl){
   if(id==='offers')renderOffersPage();
   if(id==='settings')loadSettingsPage();
   if(id==='categories')renderCategoriesPage();
+  if(id==='tiers')renderTiersPage();
 }
 
 // ===== DASHBOARD =====
@@ -1273,6 +1322,89 @@ async function deleteBundle(id){
   if(!confirm('هتمسح الحزمة؟'))return;
   try{await sb(`bundles?id=eq.${id}`,{method:'DELETE'});bundlesData=bundlesData.filter(x=>x.id!==id);renderBundles();toast('تم مسح الحزمة');}
   catch(e){toast('خطأ في المسح');}
+}
+
+// ===== DISCOUNT TIERS =====
+let tiersData=[];
+
+function updateTierValueVisibility(){
+  const type=document.getElementById('tierType').value;
+  const group=document.getElementById('tierValueGroup');
+  group.style.opacity=type==='free_shipping'?'0.4':'1';
+  group.style.pointerEvents=type==='free_shipping'?'none':'auto';
+  if(type==='free_shipping')document.getElementById('tierValue').value='0';
+}
+
+async function renderTiersPage(){
+  const list=document.getElementById('tiersAdminList');
+  if(list)list.innerHTML=`<div style="text-align:center;padding:2rem;color:var(--gray);"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>`;
+  try{tiersData=await sb('discount_tiers?order=min_amount.asc&select=*');}
+  catch(e){toast('خطأ في تحميل الخصومات');return;}
+  if(!list)return;
+  if(!tiersData.length){
+    list.innerHTML=`<div class="empty-state"><i class="fas fa-percentage"></i><p>مفيش خصومات تلقائية دلوقتي</p></div>`;return;
+  }
+  const typeLabels={percent:'نسبة %',fixed:'مبلغ ثابت',free_shipping:'توصيل مجاني'};
+  list.innerHTML=tiersData.map(t=>{
+    const badge=t.discount_type==='free_shipping'
+      ? `<span style="background:rgba(46,160,67,0.15);color:#56d364;border:1px solid rgba(46,160,67,0.3);padding:0.2rem 0.6rem;border-radius:4px;font-size:0.75rem;font-weight:700;">🚚 توصيل مجاني</span>`
+      : t.discount_type==='percent'
+        ? `<span style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:4px;font-size:0.75rem;font-weight:700;">− ${t.discount_value}%</span>`
+        : `<span style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:4px;font-size:0.75rem;font-weight:700;">− ${t.discount_value} ج</span>`;
+    return `<div style="display:flex;align-items:center;gap:0.75rem;padding:1rem;background:var(--dark2);border:1px solid ${t.active?'var(--border)':'rgba(224,53,53,0.3)'};border-radius:8px;margin-bottom:0.6rem;flex-wrap:wrap;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:1px;min-width:90px;">فوق ${t.min_amount.toLocaleString()} ج</div>
+      ${badge}
+      <div style="flex:1;font-size:0.85rem;color:rgba(245,245,245,0.7);">${t.label}</div>
+      <div class="toggle-switch ${t.active?'on':''}" onclick="toggleTier(${t.id},${!t.active})"></div>
+      <button class="action-btn" onclick="openEditTier(${t.id})"><i class="fas fa-edit"></i></button>
+      <button class="action-btn danger" onclick="deleteTier(${t.id})"><i class="fas fa-trash"></i></button>
+    </div>`;
+  }).join('');
+}
+
+async function addTier(){
+  const min=+document.getElementById('tierMinAmount').value;
+  const type=document.getElementById('tierType').value;
+  const val=+document.getElementById('tierValue').value||0;
+  const label=document.getElementById('tierLabel').value.trim();
+  if(!min||!label){toast('⚠️ اكمل الحقول المطلوبة');return;}
+  if(type!=='free_shipping'&&val<=0){toast('⚠️ ادخل قيمة الخصم');return;}
+  try{
+    const res=await sb('discount_tiers',{method:'POST',body:JSON.stringify({min_amount:min,discount_type:type,discount_value:val,label,active:true})});
+    if(res&&res[0])tiersData.push(res[0]);
+    document.getElementById('tierMinAmount').value='';
+    document.getElementById('tierValue').value='';
+    document.getElementById('tierLabel').value='';
+    renderTiersPage();toast('✅ تم إضافة الخصم');
+  }catch(e){toast('خطأ: '+e.message);}
+}
+
+async function toggleTier(id,val){
+  try{
+    await sb(`discount_tiers?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({active:val})});
+    const t=tiersData.find(x=>x.id===id);if(t)t.active=val;
+    renderTiersPage();toast(val?'✅ الخصم شغال':'⏸ الخصم متوقف');
+  }catch(e){toast('خطأ');}
+}
+
+async function deleteTier(id){
+  if(!confirm('هتمسح مستوى الخصم ده؟'))return;
+  try{
+    await sb(`discount_tiers?id=eq.${id}`,{method:'DELETE'});
+    tiersData=tiersData.filter(x=>x.id!==id);
+    renderTiersPage();toast('تم المسح');
+  }catch(e){toast('خطأ');}
+}
+
+// Edit tier inline
+function openEditTier(id){
+  const t=tiersData.find(x=>x.id===id);if(!t)return;
+  const newMin=prompt('الحد الأدنى (جنيه):',t.min_amount);if(newMin===null)return;
+  const newVal=t.discount_type==='free_shipping'?0:+prompt('قيمة الخصم:',t.discount_value);
+  const newLabel=prompt('الوصف:',t.label);if(!newLabel)return;
+  sb(`discount_tiers?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({min_amount:+newMin,discount_value:newVal,label:newLabel})})
+    .then(()=>{const tx=tiersData.find(x=>x.id===id);if(tx){tx.min_amount=+newMin;tx.discount_value=newVal;tx.label=newLabel;}renderTiersPage();toast('✅ تم الحفظ');})
+    .catch(e=>toast('خطأ: '+e.message));
 }
 
 // ===== CATEGORIES =====

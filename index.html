@@ -218,6 +218,8 @@ footer p{color:var(--gray);font-size:0.85rem;margin-bottom:0.5rem;}
   <div class="stat-item"><h3 class="counter" data-target="24">0</h3><p>ساعة رد وتوصيل</p></div>
 </div>
 
+<div id="tiersBanner" style="display:none;max-width:900px;margin:1.5rem auto 0;padding:0 2rem;"></div>
+
 <div style="padding:0 2rem;">
   <div class="delivery-alert">
     <i class="fas fa-exclamation-triangle"></i>
@@ -408,12 +410,12 @@ const pts=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random(
 const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;const tg=+e.target.dataset.target;let c=0,s=tg/60;const tm=setInterval(()=>{c+=s;if(c>=tg){c=tg;clearInterval(tm);}e.target.textContent=Math.floor(c)+(tg===100?'':'+ ');},30);obs.unobserve(e.target);});},{threshold:.5});
 document.querySelectorAll('.counter').forEach(c=>obs.observe(c));
 
-let offersMap={}, bundlesList=[], categoriesList=[];
+let offersMap={}, bundlesList=[], categoriesList=[], discountTiers=[];
 
 async function loadProducts(){
   document.getElementById('productsGrid').innerHTML=`<div class="skeleton-grid">${Array(6).fill(`<div class="skeleton"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div></div></div>`).join('')}</div>`;
   try{
-    [products, offersMap, bundlesList, categoriesList] = await Promise.all([
+    [products, offersMap, bundlesList, categoriesList, discountTiers] = await Promise.all([
       sb('products?order=id.asc&select=*'),
       sb('offers?active=eq.true&select=*').then(rows=>{
         const now=new Date();
@@ -422,9 +424,10 @@ async function loadProducts(){
         return map;
       }),
       sb('bundles?active=eq.true&select=*').then(rows=>rows.filter(b=>!b.expires_at||new Date(b.expires_at)>new Date())),
-      sb('categories?order=sort_order.asc&active=eq.true&select=name,emoji')
+      sb('categories?order=sort_order.asc&active=eq.true&select=name,emoji'),
+      sb('discount_tiers?active=eq.true&order=min_amount.desc&select=*')
     ]);
-    renderCategories();renderProducts();renderBundles();
+    renderCategories();renderProducts();renderBundles();renderTiersBanner();
   }
   catch(e){document.getElementById('productsGrid').innerHTML=`<p style="text-align:center;color:var(--gray);padding:3rem;grid-column:1/-1">حصل خطأ في تحميل المنتجات</p>`;}
 }
@@ -529,6 +532,19 @@ function addBundleToCart(bundleId){
   showToast(`🎁 تمت إضافة حزمة "${b.name}" للسلة`);
 }
 
+function renderTiersBanner(){
+  const banner=document.getElementById('tiersBanner');
+  if(!banner||!discountTiers.length){return;}
+  const sorted=[...discountTiers].sort((a,b)=>a.min_amount-b.min_amount);
+  banner.style.display='block';
+  banner.innerHTML=`<div style="background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.06));border:1px solid var(--border);border-right:3px solid var(--gold);border-radius:8px;padding:0.85rem 1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <i class="fas fa-bolt" style="color:var(--gold);flex-shrink:0;"></i>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;flex:1;">
+      ${sorted.map(t=>`<span style="font-size:0.82rem;color:rgba(245,245,245,0.8);"><span style="color:var(--gold);font-weight:700;">فوق ${t.min_amount.toLocaleString()} ج:</span> ${t.label}</span>`).join('<span style="color:var(--border);">|</span>')}
+    </div>
+  </div>`;
+}
+
 function renderCategories(active='الكل'){
   // Use DB categories if loaded, fallback to product categories
   const cats=categoriesList.length
@@ -611,11 +627,47 @@ function renderCartItems(){
 function openCart(){renderCartItems();document.getElementById('cartOverlay').classList.add('open');document.getElementById('cartDrawer').classList.add('open');document.body.style.overflow='hidden';}
 function closeCart(){document.getElementById('cartOverlay').classList.remove('open');document.getElementById('cartDrawer').classList.remove('open');document.body.style.overflow='';}
 
+function getApplicableTier(total){
+  // tiers are sorted desc by min_amount, return first that applies
+  return discountTiers.find(t=>t.active && total>=t.min_amount) || null;
+}
+
 function openCheckout(){
   if(!cart.length){showToast('السلة فاضية!');return;}closeCart();
-  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-  document.getElementById('checkoutSummaryItems').innerHTML=cart.map(i=>`<div class="summary-item"><span>${i.name} × ${i.qty}</span><span>${(i.price*i.qty).toLocaleString()} ج</span></div>`).join('');
-  document.getElementById('checkoutSummaryTotal').textContent=total.toLocaleString()+' جنيه';
+  const rawTotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
+
+  // Auto-apply best discount tier
+  const tier=getApplicableTier(rawTotal);
+  if(tier){
+    if(tier.discount_type==='percent'){
+      discountValue=Math.round(rawTotal*tier.discount_value/100);
+      appliedCoupon='__tier__';
+    } else if(tier.discount_type==='fixed'){
+      discountValue=Math.min(tier.discount_value,rawTotal);
+      appliedCoupon='__tier__';
+    } else if(tier.discount_type==='free_shipping'){
+      discountValue=0;
+      appliedCoupon='__tier__';
+    }
+  } else {
+    // Don't reset manual coupon if already applied
+    if(appliedCoupon==='__tier__'){ discountValue=0; appliedCoupon=null; }
+  }
+
+  const finalTotal=Math.max(0,rawTotal-discountValue);
+  document.getElementById('checkoutSummaryItems').innerHTML=
+    cart.map(i=>`<div class="summary-item"><span>${i.name} × ${i.qty}</span><span>${(i.price*i.qty).toLocaleString()} ج</span></div>`).join('')
+    + (tier ? `<div class="summary-item" style="color:#56d364;"><span>🎁 ${tier.label}</span><span>${tier.discount_type==='free_shipping'?'مجاناً':'- '+discountValue.toLocaleString()+' ج'}</span></div>` : '');
+  document.getElementById('checkoutSummaryTotal').textContent=finalTotal.toLocaleString()+' جنيه';
+
+  // Update coupon UI if tier applied
+  if(tier){
+    const msg=document.getElementById('couponMsg');
+    const line=document.getElementById('discountLine');
+    if(msg){msg.style.display='block';msg.style.color='#56d364';msg.textContent=`🎁 ${tier.label}`;}
+    if(line){line.style.display='flex';document.getElementById('discountAmount').textContent=tier.discount_type==='free_shipping'?'مجاناً':'- '+discountValue.toLocaleString()+' ج';}
+  }
+
   document.getElementById('checkoutModal').classList.add('open');document.body.style.overflow='hidden';
 }
 function closeCheckout(){document.getElementById('checkoutModal').classList.remove('open');document.body.style.overflow='';}
