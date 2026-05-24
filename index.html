@@ -500,7 +500,6 @@ function renderBundles(){
 function startCarousel(bid,total){_ci[bid]=0;clearInterval(_ct[bid]);_ct[bid]=setInterval(()=>goSlide(bid,(_ci[bid]+1)%total),3200);}
 function goSlide(bid,idx){_ci[bid]=idx;document.querySelectorAll(`.bslide[data-c="${bid}"]`).forEach((el,i)=>el.classList.toggle('active',i===idx));document.querySelectorAll(`.bdot[data-c="${bid}"]`).forEach((el,i)=>el.classList.toggle('on',i===idx));}
 
-// Wait, need to add data-c to dots too
 // ===== PRODUCT MODAL =====
 function openProd(id){
   const p=products.find(x=>x.id===id);if(!p)return;
@@ -618,19 +617,10 @@ async function submitOrder(){
     const notes2={cash:'روح الجيم وادفع عند الاستلام.',vodafone:'هيتم مراجعة التحويل والتواصل معاك.',instapay:'هيتم مراجعة التحويل والتواصل معاك.'};
     document.getElementById('successOid').textContent=oid;
     document.getElementById('successNote').textContent=notes2[selectedPayment];
-    const waExtra=senderAccount?`
-حساب التحويل: ${senderAccount}`:'';
-    const wa=encodeURIComponent(`🛒 *طلب جديد — TEFA*
-
-*رقم الطلب:* ${oid}
-*الاسم:* ${name}
-*الهاتف:* ${phone}
-*العنوان:* ${address}
-*المنتجات:*
-${orderData.items.map(i=>`  • ${i.name} × ${i.qty}`).join('
-')}
-*الإجمالي:* ${total.toLocaleString()} ج
-*الدفع:* ${labels[selectedPayment]}${waExtra}`);
+    const waExtra=senderAccount?('\nحساب التحويل: '+senderAccount):'';
+    const waItems=orderData.items.map(i=>'  • '+i.name+' × '+i.qty).join('\n');
+    const waMsg='🛒 *طلب جديد — TEFA*\n\n*رقم الطلب:* '+oid+'\n*الاسم:* '+name+'\n*الهاتف:* '+phone+'\n*العنوان:* '+address+'\n*المنتجات:*\n'+waItems+'\n*الإجمالي:* '+total.toLocaleString()+' ج\n*الدفع:* '+labels[selectedPayment]+waExtra;
+    const wa=encodeURIComponent(waMsg);
     const waUrl=`https://wa.me/${WHATSAPP}?text=${wa}`;
     window.open(waUrl,'_blank');
     document.getElementById('waConfirm').href=waUrl;
