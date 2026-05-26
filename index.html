@@ -99,7 +99,18 @@ header{position:fixed;inset:0 0 auto;height:64px;z-index:900;display:flex;align-
 /* BUNDLES */
 .bundles-section{padding:0 1.25rem 3rem}
 .bundle-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;max-width:1300px;margin:0 auto}
-.bundle-card{background:var(--dark);border:1px solid rgba(201,168,76,.25);border-radius:16px;overflow:hidden;transition:transform .35s cubic-bezier(.23,1,.32,1),box-shadow .35s;position:relative;}
+.cat-card{background:var(--dark);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .3s cubic-bezier(.23,1,.32,1),border-color .3s,box-shadow .3s;position:relative;aspect-ratio:1;}
+.cat-card:hover{transform:translateY(-6px);border-color:rgba(201,168,76,.5);box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 24px rgba(201,168,76,.08);}
+.cat-card:active{transform:scale(.97);}
+.cat-card-img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.cat-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.2) 60%,transparent 100%);}
+.cat-card-body{position:absolute;bottom:0;left:0;right:0;padding:.85rem;}
+.cat-card-emoji{font-size:2rem;display:block;margin-bottom:.25rem;}
+.cat-card-name{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--white);display:block;}
+.cat-card-count{font-size:.65rem;color:rgba(255,255,255,.55);font-weight:600;letter-spacing:1px;}
+.cat-card-no-img{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;background:linear-gradient(135deg,var(--dark2),var(--dark3));}
+@media(min-width:480px){#catsGrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));}}
+@media(min-width:900px){#catsGrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;}}border:1px solid rgba(201,168,76,.25);border-radius:16px;overflow:hidden;transition:transform .35s cubic-bezier(.23,1,.32,1),box-shadow .35s;position:relative;}
 .bundle-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
 @media(hover:hover){.bundle-card:hover{transform:translateY(-8px);box-shadow:0 24px 64px rgba(0,0,0,.6),0 0 40px rgba(201,168,76,.1);border-color:rgba(201,168,76,.5);}}
 .bslide-wrap{position:relative;height:180px;overflow:hidden;background:#050505}
@@ -290,11 +301,22 @@ footer p{color:var(--gray);font-size:.82rem;margin-bottom:.35rem}
 
 <section class="section" id="products-section">
   <div class="section-header">
-    <h2>المنتجات <span>المتاحة</span></h2>
-    <p>اختار المنتج المناسب لهدفك</p>
+    <h2>تسوق <span>بالقسم</span></h2>
+    <p>اختار القسم اللي يناسب هدفك</p>
   </div>
-  <div class="cats" id="catsBar"></div>
-  <div id="productsGrid"></div>
+  <!-- CATEGORY GRID -->
+  <div id="catsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;max-width:1300px;margin:0 auto;"></div>
+
+  <!-- PRODUCTS VIEW (hidden initially) -->
+  <div id="productsView" style="display:none;margin-top:2rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;">
+      <button onclick="backToCategories()" style="background:var(--dark2);border:1px solid var(--border);color:var(--gold);padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:0.85rem;font-weight:700;display:flex;align-items:center;gap:0.4rem;transition:all 0.2s;" onmouseover="this.style.background='var(--gold)';this.style.color='#000'" onmouseout="this.style.background='var(--dark2)';this.style.color='var(--gold)'">
+        <i class="fas fa-arrow-right"></i> الأقسام
+      </button>
+      <h3 id="activeCatTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--gold);"></h3>
+    </div>
+    <div id="productsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;max-width:1300px;margin:0 auto;"></div>
+  </div>
 </section>
 
 <footer>
@@ -429,7 +451,7 @@ async function loadSettings(){
 
 // ===== LOAD ALL =====
 async function loadAll(){
-  document.getElementById('productsGrid').innerHTML=`<div class="skel-grid">${Array(6).fill(`<div class="skel"><div class="skel-img"></div><div class="skel-body"><div class="skel-line"></div><div class="skel-line s"></div><div class="skel-line"></div></div></div>`).join('')}</div>`;
+  document.getElementById('catsGrid').innerHTML=`<div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;">${Array(6).fill(`<div class="skel" style="aspect-ratio:1;border-radius:14px;"><div class="skel-img" style="height:100%;"></div></div>`).join('')}</div>`;
   try{
     [products,offersMap,bundlesList,categoriesList,discountTiers]=await Promise.all([
       sb('products?order=id.asc&select=*'),
@@ -438,8 +460,8 @@ async function loadAll(){
       sb('categories?order=sort_order.asc&active=eq.true&select=name,emoji'),
       sb('discount_tiers?active=eq.true&order=min_amount.desc&select=*')
     ]);
-    renderCats();renderProds();renderBundles();renderTiersBanner();
-  }catch(e){document.getElementById('productsGrid').innerHTML=`<p style="text-align:center;color:var(--gray);padding:3rem;grid-column:1/-1">خطأ في التحميل</p>`;}
+    renderCats();renderBundles();renderTiersBanner();
+  }catch(e){document.getElementById('catsGrid').innerHTML=`<p style="text-align:center;color:var(--gray);padding:3rem;grid-column:1/-1">خطأ في التحميل</p>`;}
 }
 
 // ===== TIERS BANNER =====
@@ -450,32 +472,67 @@ function renderTiersBanner(){
 }
 
 // ===== CATEGORIES =====
-function renderCats(active='الكل'){
-  const cats=categoriesList.length?['الكل',...categoriesList.map(c=>c.name)]:['الكل',...new Set(products.map(p=>p.category))];
-  document.getElementById('catsBar').innerHTML=cats.map(c=>`<button class="cat-btn ${c===active?'active':''}" onclick="filterProds('${c}',this)">${c}</button>`).join('');
+function renderCats(){
+  const grid=document.getElementById('catsGrid');
+  if(!grid)return;
+  // Build list from DB or fallback to product categories
+  const cats=categoriesList.length
+    ?categoriesList
+    :[...new Set(products.map(p=>p.category))].map(n=>({name:n,emoji:'📦',cover_img:''}));
+  grid.innerHTML=cats.map(c=>{
+    const count=products.filter(p=>p.category===c.name&&p.in_stock).length;
+    const fallbackImg=products.find(p=>p.category===c.name&&p.img)?.img||'';
+    const img=c.cover_img||fallbackImg;
+    return `<div class="cat-card" onclick="openCat('${c.name}','${c.emoji||'📦'}')">
+      ${img
+        ?`<img class="cat-card-img" src="${img}" loading="lazy" alt="${c.name}"><div class="cat-card-overlay"></div>`
+        :`<div class="cat-card-no-img"><span style="font-size:2.5rem">${c.emoji||'📦'}</span></div><div class="cat-card-overlay" style="background:linear-gradient(to top,rgba(0,0,0,.7),transparent)"></div>`}
+      <div class="cat-card-body">
+        <span class="cat-card-name">${c.name}</span>
+        <span class="cat-card-count">${count} منتج متاح</span>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-// ===== PRODUCTS =====
+function openCat(name,emoji){
+  document.getElementById('catsGrid').style.display='none';
+  document.getElementById('productsView').style.display='block';
+  document.getElementById('activeCatTitle').textContent=emoji+' '+name;
+  renderProds(name);
+  document.getElementById('products-section').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function backToCategories(){
+  document.getElementById('productsView').style.display='none';
+  document.getElementById('catsGrid').style.display='grid';
+}
+
+function scrollToProducts(){document.getElementById('products-section').scrollIntoView({behavior:'smooth'});}
+
 function renderProds(filter='الكل'){
   const f=filter==='الكل'?products:products.filter(p=>p.category===filter);
-  const g=document.getElementById('productsGrid');g.className='products-grid';
+  const g=document.getElementById('productsGrid');
+  if(!g)return;
+  g.style.gridTemplateColumns='repeat(auto-fill,minmax(160px,1fr))';
   g.innerHTML=f.map(p=>{
     const offer=offersMap[p.id];const price=offer?offer.sale_price:p.price;
-    const priceHTML=offer?`<div class="p-price"><span class="old">${p.price.toLocaleString()} ج</span>${price.toLocaleString()}<small> ج</small></div>`:`<div class="p-price">${p.price.toLocaleString()}<small> ج</small></div>`;
-    const badge=offer?`<span class="p-badge" style="background:linear-gradient(135deg,#e03535,#ff6060);color:#fff">🔥 ${offer.label}</span>`:p.badge?`<span class="p-badge" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000">${p.badge}</span>`:'';
+    const priceHTML=offer
+      ?`<div class="p-price"><span class="old">${p.price.toLocaleString()} ج</span>${price.toLocaleString()}<small> ج</small></div>`
+      :`<div class="p-price">${p.price.toLocaleString()}<small> ج</small></div>`;
+    const badge=offer
+      ?`<span class="p-badge" style="background:linear-gradient(135deg,#e03535,#ff6060);color:#fff">🔥 ${offer.label}</span>`
+      :p.badge?`<span class="p-badge" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000">${p.badge}</span>`:'';
     return `<div class="product-card ${!p.in_stock?'oos':''}" onclick="openProd(${p.id})">
       ${badge}
       <div class="p-img">${p.img?`<img src="${p.img}" alt="${p.name}" loading="lazy">`:`<span style="position:relative;z-index:1">${p.emoji||'📦'}</span>`}</div>
       <div class="p-info">
-        <div class="p-cat">${p.category}</div>
         <div class="p-name">${p.name}</div>
         <div class="p-flavors">${(p.flavors||[]).join(' · ')}</div>
         <div class="p-bottom">${priceHTML}${p.in_stock?`<button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})"><i class="fas fa-plus"></i></button>`:''}</div>
       </div></div>`;
   }).join('');
 }
-function filterProds(cat,btn){document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderProds(cat);}
-function scrollToProducts(){document.getElementById('products-section').scrollIntoView({behavior:'smooth'});}
 
 // ===== BUNDLES =====
 const _ct={},_ci={};

@@ -344,6 +344,17 @@
               style="width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:0.7rem 1rem;border-radius:8px;font-family:'Cairo',sans-serif;font-size:1.2rem;outline:none;text-align:center;"
               onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
           </div>
+          <div style="flex:1;min-width:160px;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--gray);margin-bottom:0.4rem;text-transform:uppercase;">صورة الغلاف</label>
+            <div class="img-upload-area" style="min-height:80px;padding:0.5rem;" onclick="document.getElementById('newCatImgInput').click()">
+              <input type="file" accept="image/*" id="newCatImgInput" onchange="previewNewCatImg(this)" style="display:none;">
+              <i class="fas fa-image" style="font-size:1.2rem;"></i>
+              <p style="font-size:0.75rem;">اختر صورة</p>
+              <img id="newCatImgPreview" class="img-upload-preview" style="display:none;" alt="">
+              <div class="img-upload-overlay"><span>تغيير</span></div>
+              <div class="upload-progress" id="newCatUploadProgress"><div class="upload-progress-bar" id="newCatUploadBar"></div></div>
+            </div>
+          </div>
           <button class="primary-btn" style="padding:0.7rem 1.25rem;" onclick="addCategory()"><i class="fas fa-plus"></i> إضافة</button>
         </div>
         <div id="categoriesAdminList" style="padding:1rem;"></div>
@@ -1438,12 +1449,33 @@ async function renderCategoriesPage(){
   }
   list.innerHTML=categoriesData.map(c=>`
     <div style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--dark2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.6rem;">
-      <span style="font-size:1.4rem;width:36px;text-align:center;">${c.emoji||'📦'}</span>
+      <div style="width:52px;height:52px;border-radius:8px;overflow:hidden;background:var(--dark);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        ${c.cover_img?`<img src="${c.cover_img}" style="width:100%;height:100%;object-fit:cover;" alt="">`:`<span style="font-size:1.5rem;">${c.emoji||'📦'}</span>`}
+      </div>
       <span style="font-weight:700;flex:1;">${c.name}</span>
       <span style="font-size:0.75rem;color:var(--gray);background:var(--dark);padding:0.2rem 0.6rem;border-radius:4px;">${products.filter(p=>p.category===c.name).length} منتج</span>
-      <span style="font-size:0.7rem;color:${c.active?'var(--green)':'var(--red)'};">${c.active?'نشط':'مخفي'}</span>
+      <label style="cursor:pointer;" title="تغيير الصورة">
+        <input type="file" accept="image/*" style="display:none;" onchange="uploadCatCover(${c.id},this)">
+        <span class="action-btn" style="display:flex;"><i class="fas fa-image"></i></span>
+      </label>
       <button class="action-btn danger" onclick="deleteCategory(${c.id},'${c.name}')"><i class="fas fa-trash"></i></button>
     </div>`).join('');
+}
+
+let newCatImgFile=null;
+function previewNewCatImg(input){
+  const file=input.files[0];if(!file)return;newCatImgFile=file;
+  const prev=document.getElementById('newCatImgPreview');prev.src=URL.createObjectURL(file);prev.style.display='block';
+}
+async function uploadCatCover(id,input){
+  const file=input.files[0];if(!file)return;
+  try{
+    toast('جاري رفع الصورة...');
+    const url=await uploadImage(file,'newCatUploadBar','newCatUploadProgress');
+    await sb(`categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({cover_img:url})});
+    const c=categoriesData.find(x=>x.id===id);if(c)c.cover_img=url;
+    await renderCategoriesPage();toast('✅ تم تحديث صورة القسم');
+  }catch(e){toast('خطأ: '+e.message);}
 }
 
 async function addCategory(){
@@ -1452,13 +1484,13 @@ async function addCategory(){
   if(!name){toast('⚠️ ادخل اسم القسم');return;}
   if(categoriesData.find(c=>c.name===name)){toast('⚠️ القسم ده موجود بالفعل');return;}
   try{
-    const res=await sb('categories',{method:'POST',body:JSON.stringify({name,emoji,sort_order:categoriesData.length+1,active:true})});
+    let coverImg='';
+    if(newCatImgFile){toast('جاري رفع الصورة...');coverImg=await uploadImage(newCatImgFile,'newCatUploadBar','newCatUploadProgress');}
+    const res=await sb('categories',{method:'POST',body:JSON.stringify({name,emoji,cover_img:coverImg,sort_order:categoriesData.length+1,active:true})});
     if(res&&res[0])categoriesData.push(res[0]);
-    document.getElementById('newCatName').value='';
-    document.getElementById('newCatEmoji').value='';
-    fillCategorySelects();
-    await renderCategoriesPage();
-    toast(`✅ تم إضافة قسم "${name}"`);
+    document.getElementById('newCatName').value='';document.getElementById('newCatEmoji').value='';
+    newCatImgFile=null;document.getElementById('newCatImgPreview').style.display='none';document.getElementById('newCatImgInput').value='';
+    fillCategorySelects();await renderCategoriesPage();toast(`✅ تم إضافة قسم "${name}"`);
   }catch(e){toast('خطأ: '+e.message);}
 }
 
