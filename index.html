@@ -457,7 +457,7 @@ async function loadAll(){
       sb('products?order=id.asc&select=*'),
       sb('offers?active=eq.true&select=*').then(rows=>{const now=new Date(),map={};rows.filter(o=>!o.expires_at||new Date(o.expires_at)>now).forEach(o=>map[o.product_id]=o);return map;}),
       sb('bundles?active=eq.true&select=*').then(rows=>rows.filter(b=>!b.expires_at||new Date(b.expires_at)>new Date())),
-      sb('categories?order=sort_order.asc&active=eq.true&select=name,emoji'),
+      sb('categories?order=sort_order.asc&active=eq.true&select=name,emoji,cover_img'),
       sb('discount_tiers?active=eq.true&order=min_amount.desc&select=*')
     ]);
     renderCats();renderBundles();renderTiersBanner();
